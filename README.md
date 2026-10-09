@@ -1,7 +1,7 @@
 #   FairTeam AI Service
 
 Servicio Python separado que recibe material de estudio y genera un taller de refuerzo en español con actividades, evaluación y referencias al documento. El backend Java es el único consumidor previsto; el servicio requiere un token interno y mantiene la clave de Gemini del lado servidor.
-
+ 
 ## Arquitectura del flujo
 
 `Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend`  
