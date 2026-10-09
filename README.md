@@ -10,7 +10,7 @@ Este servicio no recibe nombres, correos, identificadores ni calificaciones de e
 
 El documento cargado se procesa en memoria y su texto se envía a la API Gemini para generar la respuesta. Usa únicamente material que el docente esté autorizado a procesar; para las primeras pruebas, usa documentos de demostración y datos ficticios, nunca calificaciones o identificadores personales.
 
-## Requisitos y ejecución local 
+## Requisitos y ejecución local  
 
 Se requiere Python 3.11 o posterior.
  
