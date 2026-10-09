@@ -4,7 +4,7 @@ Servicio Python separado que recibe material de estudio y genera un taller de re
 
 ## Arquitectura del flujo
 
-`Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend` 
+`Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend`  
 
 Este servicio no recibe nombres, correos, identificadores ni calificaciones de estudiantes. El backend envía el documento, la materia, el nivel de refuerzo y el objetivo didáctico.
 
