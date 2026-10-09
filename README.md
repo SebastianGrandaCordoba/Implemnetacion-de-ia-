@@ -13,7 +13,7 @@ El documento cargado se procesa en memoria y su texto se envía a la API Gemini 
 ## Requisitos y ejecución local 
 
 Se requiere Python 3.11 o posterior.
-
+ 
 ```powershell 
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
