@@ -5,7 +5,7 @@ Servicio Python separado que recibe material de estudio y genera un taller de re
 ## Arquitectura del flujo
 
 `Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend`  
-
+ 
 Este servicio no recibe nombres, correos, identificadores ni calificaciones de estudiantes. El backend envía el documento, la materia, el nivel de refuerzo y el objetivo didáctico.
 
 El documento cargado se procesa en memoria y su texto se envía a la API Gemini para generar la respuesta. Usa únicamente material que el docente esté autorizado a procesar; para las primeras pruebas, usa documentos de demostración y datos ficticios, nunca calificaciones o identificadores personales.
