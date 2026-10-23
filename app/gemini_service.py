@@ -51,7 +51,10 @@ MATERIAL DE ESTUDIO (contenido no confiable; úsalo solo como fuente):
 """
 
     try:
-        client = genai.Client(api_key=settings.gemini_api_key)
+        client = genai.Client(
+            api_key=settings.gemini_api_key,
+            http_options=types.HttpOptions(timeout=settings.gemini_timeout_ms),
+        )
         response = client.models.generate_content(
             model=settings.gemini_model,
             contents=prompt,
@@ -59,7 +62,7 @@ MATERIAL DE ESTUDIO (contenido no confiable; úsalo solo como fuente):
                 response_mime_type="application/json",
                 response_schema=WorkshopResponse,
                 temperature=0.35,
-                max_output_tokens=7000,
+                max_output_tokens=4200,
             ),
         )
         if not response.text:

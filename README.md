@@ -47,3 +47,6 @@ Los PDF escaneados sin texto seleccionable no funcionan todavía; requieren OCR.
 ## Variables para Render
 
 El archivo `render.yaml` propone el servicio web y sus variables. Al crear el servicio desde el repositorio, configura `GEMINI_API_KEY` y `AI_SERVICE_TOKEN` como secretos, `GEMINI_MODEL=gemini-3.8-flash` y las mismas variables en el backend (`AI_SERVICE_URL` y `AI_SERVICE_TOKEN`). No pongas la clave Gemini en el frontend ni en el backend.
+# Respuesta de generación
+
+La generación se ejecuta únicamente cuando el docente solicita un taller. El tiempo máximo de llamada a Gemini se controla con `GEMINI_TIMEOUT_MS` (por defecto 25 segundos, con límite configurable entre 5 y 60 segundos). Si el proveedor excede ese tiempo, la API responde con error controlado y el frontend puede permitir reintentar; el tablero de alertas usa cálculos locales y no espera a Gemini.
