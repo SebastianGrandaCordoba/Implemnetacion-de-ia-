@@ -44,6 +44,7 @@ class GenerateWorkshopTests(unittest.TestCase):
         self.assertEqual(calls[1][0], "generate")
         self.assertEqual(calls[1][2]["material_text"], "[Página 1] Variables")
         self.assertEqual(calls[1][2]["learning_objective"], "Repasar")
+        self.assertEqual(calls[1][2]["learning_context"], "")
 
     def test_propagates_adapter_errors_to_http_boundary(self) -> None:
         def fail_extract(*_args) -> str:

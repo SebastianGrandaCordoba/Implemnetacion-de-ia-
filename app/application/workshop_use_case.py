@@ -19,6 +19,7 @@ class WorkshopRequest:
     subject: str
     target_level: str
     learning_objective: str
+    learning_context: str = ""
 
 
 class GenerateWorkshop:
@@ -44,4 +45,5 @@ class GenerateWorkshop:
             subject=request.subject,
             target_level=request.target_level,
             learning_objective=request.learning_objective,
+            learning_context=request.learning_context,
         )
