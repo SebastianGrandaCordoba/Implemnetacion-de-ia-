@@ -2,9 +2,15 @@
 
 Servicio Python separado que recibe material de estudio y genera un taller de refuerzo en español con actividades, evaluación y referencias al documento. El backend Java es el único consumidor previsto; el servicio requiere un token interno y mantiene la clave de Gemini del lado servidor.
  
-## Arquitectura del flujo
+## Arquitectura hexagonal
 
-`Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend`  
+`Frontend → API backend → adaptador HTTP FastAPI → caso de uso → puertos → adaptadores de documentos/Gemini`
+
+El caso de uso `GenerateWorkshop` coordina la extracción y generación mediante los puertos definidos en `app/application/ports.py`. `DocumentMaterialAdapter` y `GeminiWorkshopAdapter` son adaptadores de salida; `app/main.py` es el adaptador HTTP de entrada y el punto de composición. Esto permite probar el flujo con dependencias simuladas y cambiar el proveedor o parser sin cambiar la ruta pública.
+
+La ruta y el DTO de respuesta permanecen compatibles con el backend Java:
+
+`Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend`
  
 Este servicio no recibe nombres, correos, identificadores ni calificaciones de estudiantes. El backend envía el documento, la materia, el nivel de refuerzo y el objetivo didáctico.
 

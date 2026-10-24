@@ -6,12 +6,14 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
 from starlette.concurrency import run_in_threadpool
 
+from app.adapters.gemini_workshop_generator import GeminiWorkshopAdapter
+from app.adapters.material_extraction import DocumentMaterialAdapter
+from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
-from app.document_parser import MaterialError, extract_text
+from app.document_parser import MaterialError
 from app.gemini_service import (
     GeminiConfigurationError,
     GeminiGenerationError,
-    generate_workshop,
 )
 from app.schemas import WorkshopResponse
 
@@ -21,6 +23,12 @@ app = FastAPI(
     title="FairTeam AI Service",
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
     version="1.0.0",
+)
+
+# Composition root: the HTTP adapter wires application ports to infrastructure.
+generate_workshop_use_case = GenerateWorkshop(
+    extract_material=DocumentMaterialAdapter(),
+    generate=GeminiWorkshopAdapter(),
 )
 
 
@@ -74,30 +82,30 @@ async def create_workshop(
     filename = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
     if not re.fullmatch(r"[\w .()_-]{1,180}\.(pdf|docx|txt)", filename, flags=re.IGNORECASE):
         raise HTTPException(status_code=400, detail="Adjunta un archivo PDF, DOCX o TXT con nombre válido.")
-    raw = await file.read(settings.max_upload_bytes + 1)
-    if not raw:
-        raise HTTPException(status_code=400, detail="El archivo está vacío.")
-    if len(raw) > settings.max_upload_bytes:
-        raise HTTPException(status_code=413, detail="El archivo supera el límite de 10 MB.")
-
     try:
-        material_text = extract_text(filename, raw, settings.max_extracted_chars)
+        raw = await file.read(settings.max_upload_bytes + 1)
+        if not raw:
+            raise HTTPException(status_code=400, detail="El archivo está vacío.")
+        if len(raw) > settings.max_upload_bytes:
+            raise HTTPException(status_code=413, detail="El archivo supera el límite de 10 MB.")
+
+        return await run_in_threadpool(
+            generate_workshop_use_case.execute,
+            settings,
+            WorkshopRequest(
+                filename=filename,
+                content=raw,
+                subject=subject.strip(),
+                target_level=level,
+                learning_objective=learning_objective.strip(),
+            ),
+        )
     except MaterialError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    finally:
-        await file.close()
-
-    try:
-        return await run_in_threadpool(
-            generate_workshop,
-            settings,
-            material_text=material_text,
-            subject=subject.strip(),
-            target_level=level,
-            learning_objective=learning_objective.strip(),
-        )
     except GeminiConfigurationError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except GeminiGenerationError as exc:
         logger.warning("Workshop generation failed: %s", exc)
         raise HTTPException(status_code=502, detail="No se pudo generar el taller. Inténtalo de nuevo.") from exc
+    finally:
+        await file.close()
