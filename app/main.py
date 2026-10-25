@@ -62,12 +62,13 @@ def health() -> dict[str, str]:
     dependencies=[Depends(require_backend_token)],
 )
 async def create_workshop(
-    file: Annotated[UploadFile, File()],
     subject: Annotated[str, Form(min_length=1, max_length=120)],
     target_level: Annotated[str, Form(alias="targetLevel")],
     learning_objective: Annotated[str, Form(alias="learningObjective")] = "",
     learning_context: Annotated[str, Form(alias="learningContext")] = "",
     generation_type: Annotated[str, Form(alias="generationType")] = "WORKSHOP",
+    file: UploadFile | None = File(default=None),
+    files: list[UploadFile] | None = File(default=None),
 ) -> WorkshopResponse:
     settings = get_settings()
     level_map = {
@@ -85,27 +86,38 @@ async def create_workshop(
     if generation_type.strip().upper() not in {"WORKSHOP", "QUIZ"}:
         raise HTTPException(status_code=400, detail="El tipo de generación debe ser WORKSHOP o QUIZ.")
 
-    filename = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
-    if not re.fullmatch(r"[\w .()_-]{1,180}\.(pdf|docx|txt)", filename, flags=re.IGNORECASE):
-        raise HTTPException(status_code=400, detail="Adjunta un archivo PDF, DOCX o TXT con nombre válido.")
+    if file is not None and files:
+        raise HTTPException(status_code=400, detail="Envía los materiales en un solo campo.")
+    uploads = files if files else ([file] if file is not None else [])
+    if not uploads or len(uploads) > 6:
+        raise HTTPException(status_code=400, detail="Adjunta entre 1 y 6 materiales.")
     try:
-        raw = await file.read(settings.max_upload_bytes + 1)
-        if not raw:
-            raise HTTPException(status_code=400, detail="El archivo está vacío.")
-        if len(raw) > settings.max_upload_bytes:
-            raise HTTPException(status_code=413, detail="El archivo supera el límite de 10 MB.")
+        materials: list[tuple[str, bytes]] = []
+        total_size = 0
+        for upload in uploads:
+            filename = (upload.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+            if not re.fullmatch(r"[\w .()_-]{1,180}\.(pdf|docx|txt)", filename, flags=re.IGNORECASE):
+                raise HTTPException(status_code=400, detail="Adjunta archivos PDF, DOCX o TXT con nombre válido.")
+            raw = await upload.read(settings.max_upload_bytes + 1)
+            if not raw:
+                raise HTTPException(status_code=400, detail=f"El archivo {filename} está vacío.")
+            total_size += len(raw)
+            if total_size > settings.max_upload_bytes:
+                raise HTTPException(status_code=413, detail="Los materiales juntos superan el límite de 10 MB.")
+            materials.append((filename, raw))
 
         return await run_in_threadpool(
             generate_workshop_use_case.execute,
             settings,
             WorkshopRequest(
-                filename=filename,
-                content=raw,
+                filename=materials[0][0],
+                content=materials[0][1],
                 subject=subject.strip(),
                 target_level=level,
                 learning_objective=learning_objective.strip(),
                 learning_context=learning_context.strip(),
                 generation_type=generation_type.strip().upper(),
+                additional_materials=tuple(materials[1:]),
             ),
         )
     except MaterialError as exc:
@@ -116,4 +128,5 @@ async def create_workshop(
         logger.warning("Workshop generation failed: %s", exc)
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     finally:
-        await file.close()
+        for upload in uploads:
+            await upload.close()
