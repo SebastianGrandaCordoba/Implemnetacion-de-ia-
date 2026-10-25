@@ -61,7 +61,7 @@ Reglas de contenido:
 - Exactamente 3 actividades prácticas y exactamente 3 preguntas de evaluación.
 {response_instructions}
 - Incluye exactamente 2 objetivos observables y verificables.
-- Cada actividad debe nombrar una acción concreta y explicar instrucciones numeradas (1., 2., 3.) con datos y contexto específicos del material, no solo decir “analiza” o “investiga”. Escribe las instrucciones con esta estructura: “Propósito: … Pasos: 1. … 2. … 3. … Evidencia: …”. Indica un producto verificable (respuesta, diagrama, tabla, solución razonada o explicación) y estima minutos. Máximo 100 palabras por actividad.
+- Cada actividad debe nombrar una acción concreta y explicar instrucciones numeradas (1., 2., 3.) con datos y contexto específicos del material, no solo decir “analiza” o “investiga”. Dentro del campo de instrucciones usa saltos de línea y esta estructura: “Propósito: …” / “Pasos:” / “1. …” / “2. …” / “3. …” / “Evidencia: …”. Indica un producto verificable (respuesta, diagrama, tabla, solución razonada o explicación) y estima minutos. Máximo 100 palabras por actividad.
 - La tercera actividad debe transferir el concepto a un caso nuevo o cerrar con una reflexión comprobable, según el material.
 - Distribuye el tiempo de manera realista: las tres actividades juntas deben durar entre 25 y 50 minutos.
 - Cada pregunta de evaluación debe comprobar un aprendizaje distinto. Incluye opciones plausibles, respuesta correcta y una explicación breve que enseñe por qué y por qué una opción tentadora no aplica.
