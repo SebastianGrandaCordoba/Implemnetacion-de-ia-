@@ -24,4 +24,5 @@ class WorkshopGenerator(Protocol):
         target_level: str,
         learning_objective: str,
         learning_context: str,
+        generation_type: str,
     ) -> WorkshopResponse: ...

@@ -15,6 +15,7 @@ class GeminiWorkshopAdapter:
         target_level: str,
         learning_objective: str,
         learning_context: str,
+        generation_type: str = "WORKSHOP",
     ) -> WorkshopResponse:
         return generate_workshop(
             settings,
@@ -23,4 +24,5 @@ class GeminiWorkshopAdapter:
             target_level=target_level,
             learning_objective=learning_objective,
             learning_context=learning_context,
+            generation_type=generation_type,
         )

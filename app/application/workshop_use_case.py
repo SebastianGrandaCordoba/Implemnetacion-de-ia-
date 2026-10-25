@@ -20,6 +20,7 @@ class WorkshopRequest:
     target_level: str
     learning_objective: str
     learning_context: str = ""
+    generation_type: str = "WORKSHOP"
 
 
 class GenerateWorkshop:
@@ -46,4 +47,5 @@ class GenerateWorkshop:
             target_level=request.target_level,
             learning_objective=request.learning_objective,
             learning_context=request.learning_context,
+            generation_type=request.generation_type,
         )

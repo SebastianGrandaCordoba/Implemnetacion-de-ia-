@@ -45,6 +45,33 @@ class GenerateWorkshopTests(unittest.TestCase):
         self.assertEqual(calls[1][2]["material_text"], "[Página 1] Variables")
         self.assertEqual(calls[1][2]["learning_objective"], "Repasar")
         self.assertEqual(calls[1][2]["learning_context"], "")
+        self.assertEqual(calls[1][2]["generation_type"], "WORKSHOP")
+
+    def test_forwards_quiz_generation_type(self) -> None:
+        calls: list[dict] = []
+
+        def generate(_settings: FakeSettings, **kwargs) -> WorkshopResponse:
+            calls.append(kwargs)
+            return WorkshopResponse(
+                title="Quiz breve",
+                subject="Programación",
+                targetLevel="LOW",
+                summary="Comprobación",
+                learningObjectives=["Identificar un patrón", "Elegir un patrón"],
+                activities=[],
+                assessment=[],
+                sourceReferences=[],
+            )
+
+        use_case = GenerateWorkshop(lambda *_args: "[Página 1] Patrones", generate)
+        use_case.execute(
+            self.settings,
+            WorkshopRequest(
+                "material.txt", b"text", "Programación", "LOW", "Comprobar aprendizaje",
+                generation_type="QUIZ",
+            ),
+        )
+        self.assertEqual(calls[0]["generation_type"], "QUIZ")
 
     def test_propagates_adapter_errors_to_http_boundary(self) -> None:
         def fail_extract(*_args) -> str:

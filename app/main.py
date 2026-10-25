@@ -67,6 +67,7 @@ async def create_workshop(
     target_level: Annotated[str, Form(alias="targetLevel")],
     learning_objective: Annotated[str, Form(alias="learningObjective")] = "",
     learning_context: Annotated[str, Form(alias="learningContext")] = "",
+    generation_type: Annotated[str, Form(alias="generationType")] = "WORKSHOP",
 ) -> WorkshopResponse:
     settings = get_settings()
     level_map = {
@@ -81,6 +82,8 @@ async def create_workshop(
         raise HTTPException(status_code=400, detail="El objetivo no puede superar 1000 caracteres.")
     if len(learning_context) > 2500:
         raise HTTPException(status_code=400, detail="El contexto del curso no puede superar 2500 caracteres.")
+    if generation_type.strip().upper() not in {"WORKSHOP", "QUIZ"}:
+        raise HTTPException(status_code=400, detail="El tipo de generación debe ser WORKSHOP o QUIZ.")
 
     filename = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
     if not re.fullmatch(r"[\w .()_-]{1,180}\.(pdf|docx|txt)", filename, flags=re.IGNORECASE):
@@ -102,6 +105,7 @@ async def create_workshop(
                 target_level=level,
                 learning_objective=learning_objective.strip(),
                 learning_context=learning_context.strip(),
+                generation_type=generation_type.strip().upper(),
             ),
         )
     except MaterialError as exc:
