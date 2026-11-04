@@ -37,7 +37,8 @@ class MultipleMaterialsTests(unittest.TestCase):
     def test_stops_when_materials_exhaust_the_budget(self) -> None:
         use_case = GenerateWorkshop(lambda name, raw, max_chars: "x" * (max_chars - 100), lambda *_a, **_k: response())
         with self.assertRaisesRegex(MaterialError, "demasiado texto"):
-            use_case.execute(Settings(), WorkshopRequest("a.txt", b"1", "F", "LOW", "", additional_materials=(("b.txt", b"2"),)))
+            request = WorkshopRequest("a.txt", b"1", "F", "LOW", "", additional_materials=(("b.txt", b"2"),))
+            use_case.execute(Settings(), request)
 
 
 if __name__ == "__main__":

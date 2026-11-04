@@ -13,8 +13,9 @@ class VerifiableReferencesTests(unittest.TestCase):
         self.assertIsNotNone(verifiable_references(workshop(sourceReferences=["Página 12"]), MATERIAL))
 
     def test_unlabeled_material_needs_the_fragment_reference(self) -> None:
-        self.assertIsNone(verifiable_references(workshop(sourceReferences=["Fragmento inicial del material"]), "texto sin etiquetas"))
-        self.assertIsNotNone(verifiable_references(workshop(sourceReferences=["Página 1"]), "texto sin etiquetas"))
+        plain = "texto sin etiquetas"
+        self.assertIsNone(verifiable_references(workshop(sourceReferences=["Fragmento inicial del material"]), plain))
+        self.assertIsNotNone(verifiable_references(workshop(sourceReferences=["Página 1"]), plain))
 
 
 if __name__ == "__main__":
