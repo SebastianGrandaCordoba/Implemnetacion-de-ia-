@@ -6,6 +6,7 @@ from google import genai
 from google.genai import types
 
 from app.config import Settings
+from app.domain.prompt import level_guidance
 from app.schemas import WorkshopResponse
 
 logger = logging.getLogger(__name__)
@@ -34,11 +35,7 @@ def generate_workshop(
 
     quiz_mode = generation_type.strip().upper() == "QUIZ"
     deliverable = "quiz breve de comprobación" if quiz_mode else "taller de refuerzo"
-    level_guidance = {
-        "LOW": "Asume que el grupo necesita apoyo inicial: explica palabras clave, resuelve un ejemplo modelo, da pistas graduales y empieza con una tarea corta.",
-        "MEDIUM": "Asume que el grupo conoce lo básico: empieza con una práctica guiada y termina con una aplicación nueva sin resolver.",
-        "HIGH": "Asume que el grupo domina lo esencial: evita repetir definiciones y plantea aplicación, comparación o un reto de transferencia.",
-    }.get(target_level.strip().upper(), "Ajusta la dificultad al nivel indicado y explica cualquier término necesario.")
+    guidance = level_guidance(target_level)
     response_instructions = (
         "- El título debe comenzar con 'Quiz breve:'. El quiz es el producto principal: sus tres preguntas deben ser claras, autocontenidas y tener opciones, respuesta correcta y explicación. Las actividades describen cómo responderlo."
         if quiz_mode else "- El título debe comenzar con 'Taller de refuerzo:'. Diseña una guía lista para entregar, que permita al estudiante trabajar sin que el docente tenga que completar instrucciones."
@@ -53,7 +50,7 @@ Contexto agregado del curso (sin nombres ni datos personales): {learning_context
 Redacta como un docente que explica con claridad, en español natural y directo para estudiantes universitarios. Evita frases genéricas como “investiga el tema”, “analiza la información” o “refuerza conocimientos”. Cada tarea debe poder empezarse sin que el docente tenga que inventar instrucciones.
 
 Adapta la dificultad al nivel:
-{level_guidance}
+{guidance}
 
 Estructura la sesión como una guía lista para clase: activación breve, práctica guiada paso a paso y aplicación/comprobación con cierre. La dificultad debe avanzar entre actividades y cada una debe trabajar una destreza distinta.
 
