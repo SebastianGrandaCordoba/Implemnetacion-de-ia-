@@ -23,3 +23,10 @@ def normalize_level(raw: str) -> str:
     if level is None:
         raise InvalidRequest("El nivel debe ser LOW, MEDIUM o HIGH.")
     return level
+
+
+def normalize_generation_type(raw: str) -> str:
+    kind = raw.strip().upper() or "WORKSHOP"
+    if kind not in GENERATION_TYPES:
+        raise InvalidRequest("El tipo de generación debe ser WORKSHOP o QUIZ.")
+    return kind
