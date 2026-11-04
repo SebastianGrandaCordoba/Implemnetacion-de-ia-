@@ -19,3 +19,7 @@ services:
         value: "10485760"
       - key: MAX_EXTRACTED_CHARS
         value: "30000"
+      - key: GENERATION_ATTEMPTS
+        value: "2"
+      - key: GENERATION_CACHE_ENTRIES
+        value: "32"
