@@ -37,3 +37,16 @@ def check_text_limits(learning_objective: str, learning_context: str) -> None:
         raise InvalidRequest(f"El objetivo no puede superar {MAX_OBJECTIVE_CHARS} caracteres.")
     if len(learning_context) > MAX_CONTEXT_CHARS:
         raise InvalidRequest(f"El contexto del curso no puede superar {MAX_CONTEXT_CHARS} caracteres.")
+
+
+def safe_filename(raw: str | None) -> str:
+    """Keeps only the base name and rejects anything that is not a supported document."""
+    filename = (raw or "").replace("\\", "/").rsplit("/", 1)[-1]
+    if not _FILENAME.fullmatch(filename):
+        raise InvalidRequest("Adjunta archivos PDF, DOCX o TXT con nombre válido.")
+    return filename
+
+
+def check_material_count(count: int) -> None:
+    if count < 1 or count > MAX_MATERIALS:
+        raise InvalidRequest(f"Adjunta entre 1 y {MAX_MATERIALS} materiales.")
