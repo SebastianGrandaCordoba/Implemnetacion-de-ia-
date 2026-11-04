@@ -38,14 +38,14 @@ class FakeUseCase:
         return self.result
 
 
-def client_with(use_case: FakeUseCase, token: str = TOKEN) -> TestClient:
+def client_with(use_case: FakeUseCase, token: str = TOKEN, raise_server_exceptions: bool = True) -> TestClient:
     app.dependency_overrides[get_use_case] = lambda: use_case
     env = mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": token, "GEMINI_API_KEY": "k"})
     # Each test gets an unlimited budget; rate-limit tests patch their own limiter.
     limiter = mock.patch("app.main.generation_limiter", SlidingWindowLimiter(0))
     env.start()
     limiter.start()
-    client = TestClient(app)
+    client = TestClient(app, raise_server_exceptions=raise_server_exceptions)
     client._patchers = (env, limiter)
     return client
 
