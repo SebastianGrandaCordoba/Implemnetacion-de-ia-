@@ -1,6 +1,5 @@
 import hmac
 import logging
-import re
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
@@ -89,15 +88,15 @@ async def create_workshop(
     if file is not None and files:
         raise HTTPException(status_code=400, detail="Envía los materiales en un solo campo.")
     uploads = files if files else ([file] if file is not None else [])
-    if not uploads or len(uploads) > 6:
-        raise HTTPException(status_code=400, detail="Adjunta entre 1 y 6 materiales.")
+    try:
+        check_material_count(len(uploads))
+    except InvalidRequest as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
         materials: list[tuple[str, bytes]] = []
         total_size = 0
         for upload in uploads:
-            filename = (upload.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
-            if not re.fullmatch(r"[\w .()_-]{1,180}\.(pdf|docx|txt)", filename, flags=re.IGNORECASE):
-                raise HTTPException(status_code=400, detail="Adjunta archivos PDF, DOCX o TXT con nombre válido.")
+            filename = safe_filename(upload.filename)
             raw = await upload.read(settings.max_upload_bytes + 1)
             if not raw:
                 raise HTTPException(status_code=400, detail=f"El archivo {filename} está vacío.")
@@ -120,6 +119,8 @@ async def create_workshop(
                 additional_materials=tuple(materials[1:]),
             ),
         )
+    except InvalidRequest as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except MaterialError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except GeminiConfigurationError as exc:
