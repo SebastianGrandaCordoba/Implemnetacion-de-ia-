@@ -92,3 +92,22 @@ class CachedWorkshopGenerator:
 
     def __len__(self) -> int:
         return len(self._entries)
+
+
+class TimedWorkshopGenerator:
+    """Logs how long each generation takes, which helps tune GEMINI_TIMEOUT_MS."""
+
+    def __init__(self, inner: WorkshopGenerator, clock: Callable[[], float] = time.perf_counter) -> None:
+        self._inner = inner
+        self._clock = clock
+        self.last_duration: float | None = None
+
+    def __call__(self, settings, **request) -> WorkshopResponse:
+        started = self._clock()
+        try:
+            return self._inner(settings, **request)
+        finally:
+            self.last_duration = self._clock() - started
+            logger.info(
+                "Generation %s took %.2fs", request.get("generation_type", "WORKSHOP"), self.last_duration
+            )
