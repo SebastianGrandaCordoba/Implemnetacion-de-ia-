@@ -70,6 +70,25 @@ La respuesta sigue el DTO `WorkshopGenerationResponseDTO` del backend: título, 
 
 Los PDF escaneados sin texto seleccionable no funcionan todavía; requieren OCR. Si el documento supera el límite de texto extraído, el servicio pide subir un capítulo más corto en vez de cortar contenido silenciosamente. La generación cita referencias solicitadas, pero el docente debe revisar el taller antes de asignarlo.
 
+### Otras rutas
+
+- `GET /api/v1/limits`: límites vigentes (formatos, tamaño, materiales, niveles y tipos) para mostrarlos antes de subir archivos.
+- `POST /api/v1/materials/inspect`: recibe `files` y devuelve, por archivo, caracteres, palabras, páginas/secciones/líneas detectadas, tokens estimados y una vista previa. No llama a Gemini.
+
+Todas las rutas `/api/v1` exigen `X-AI-Service-Token`. Las respuestas incluyen `X-Request-ID` (se reutiliza el del backend si es válido) y `Server-Timing`.
+
+### Códigos de error
+
+| Código | Cuándo |
+| --- | --- |
+| 400 | Nivel, tipo, nombre de archivo, cantidad de materiales o textos fuera de límite |
+| 401 | Token interno ausente o incorrecto |
+| 413 | Los materiales juntos superan 10 MB |
+| 422 | El documento no se puede leer, no tiene texto o es demasiado largo |
+| 429 | Demasiadas generaciones por minuto (incluye `Retry-After`) |
+| 502 | Gemini respondió con error o el taller no cumplió las reglas de calidad |
+| 503 | Falta configurar el token interno o la clave de Gemini |
+
 ## Variables para Render
 
 El archivo `render.yaml` propone el servicio web y sus variables. Al crear el servicio desde el repositorio, configura `GEMINI_API_KEY` y `AI_SERVICE_TOKEN` como secretos, `GEMINI_MODEL=gemini-3.5-flash-lite` y las mismas variables en el backend (`AI_SERVICE_URL` y `AI_SERVICE_TOKEN`). La aplicación migra automáticamente el valor anterior `gemini-3.8-flash` al modelo rápido. No pongas la clave Gemini en el frontend ni en el backend.
