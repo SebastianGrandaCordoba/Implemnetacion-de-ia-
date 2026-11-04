@@ -21,7 +21,7 @@ def extract_text(filename: str, raw: bytes, max_chars: int) -> str:
     except Exception as exc:
         raise MaterialError("No se pudo leer el documento. Revisa que no esté dañado o protegido.") from exc
 
-    text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
+    text = normalize(text)
     if not text:
         raise MaterialError(
             "No se encontró texto legible. Los PDF escaneados necesitan OCR antes de subirlos."
@@ -31,6 +31,11 @@ def extract_text(filename: str, raw: bytes, max_chars: int) -> str:
             f"El documento supera el máximo de {max_chars:,} caracteres extraídos. Sube un capítulo más corto."
         )
     return text
+
+
+def normalize(text: str) -> str:
+    """Trims every line and drops blank ones so prompts stay compact."""
+    return "\n".join(line.strip() for line in text.splitlines() if line.strip())
 
 
 def _extract_pdf(raw: bytes) -> str:
