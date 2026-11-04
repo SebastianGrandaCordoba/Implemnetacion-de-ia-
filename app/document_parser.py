@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
 
@@ -10,16 +11,11 @@ class MaterialError(ValueError):
 
 
 def extract_text(filename: str, raw: bytes, max_chars: int) -> str:
-    extension = Path(filename).suffix.lower()
+    extractor = EXTRACTORS.get(Path(filename).suffix.lower())
+    if extractor is None:
+        raise MaterialError("Formatos permitidos: PDF, DOCX y TXT.")
     try:
-        if extension == ".pdf":
-            text = _extract_pdf(raw)
-        elif extension == ".docx":
-            text = _extract_docx(raw)
-        elif extension == ".txt":
-            text = _extract_txt(raw)
-        else:
-            raise MaterialError("Formatos permitidos: PDF, DOCX y TXT.")
+        text = extractor(raw)
     except MaterialError:
         raise
     except Exception as exc:
@@ -69,3 +65,12 @@ def _extract_txt(raw: bytes) -> str:
     content = raw.decode("utf-8-sig")
     lines = [line.strip() for line in content.splitlines() if line.strip()]
     return "\n".join(f"[Línea {index}] {line}" for index, line in enumerate(lines, start=1))
+
+
+# Strategy registry: one extractor per supported extension.
+EXTRACTORS: dict[str, Callable[[bytes], str]] = {
+    ".pdf": _extract_pdf,
+    ".docx": _extract_docx,
+    ".txt": _extract_txt,
+}
+SUPPORTED_EXTENSIONS = tuple(EXTRACTORS)
