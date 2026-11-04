@@ -111,5 +111,8 @@ RULES: list[Rule] = [
     activity_minutes,
     has_references,
     verifiable_references,
+    option_count,
+    answers_in_options,
+    distinct_questions,
 ]
 
