@@ -8,6 +8,25 @@ Servicio Python separado que recibe material de estudio y genera un taller de re
 
 El caso de uso `GenerateWorkshop` coordina la extracción y generación mediante los puertos definidos en `app/application/ports.py`. `DocumentMaterialAdapter` y `GeminiWorkshopAdapter` son adaptadores de salida; `app/main.py` es el adaptador HTTP de entrada y el punto de composición. Esto permite probar el flujo con dependencias simuladas y cambiar el proveedor o parser sin cambiar la ruta pública.
 
+### Estructura
+
+```
+app/
+  domain/        reglas puras: prompt, validación, errores, límites, estadísticas
+  application/   casos de uso (GenerateWorkshop, InspectMaterials) y puertos
+  adapters/      Gemini, documentos, decoradores de resiliencia y middleware HTTP
+  main.py        adaptador HTTP de entrada y raíz de composición
+tests/           pruebas unitarias y de API sin llamar a Gemini
+```
+
+### Patrones de diseño
+
+- **Puertos y adaptadores**: el caso de uso solo conoce `MaterialTextExtractor` y `WorkshopGenerator`.
+- **Strategy**: `EXTRACTORS` elige el lector según la extensión (PDF, DOCX, TXT).
+- **Specification**: cada regla de calidad de `app/domain/validation.py` devuelve un error o `None`.
+- **Decorator**: `CachedWorkshopGenerator → RetryingWorkshopGenerator → TimedWorkshopGenerator → Gemini`.
+- **Factory**: `create_client` construye el cliente Gemini y permite reemplazarlo en pruebas.
+
 La ruta y el DTO de respuesta permanecen compatibles con el backend Java:
 
 `Frontend → Backend Spring Boot → este servicio → Gemini → Backend → Frontend`
