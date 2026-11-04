@@ -11,6 +11,14 @@ from app.adapters.material_extraction import DocumentMaterialAdapter
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
 from app.document_parser import MaterialError
+from app.domain.request_rules import (
+    InvalidRequest,
+    check_material_count,
+    check_text_limits,
+    normalize_generation_type,
+    normalize_level,
+    safe_filename,
+)
 from app.gemini_service import (
     GeminiConfigurationError,
     GeminiGenerationError,
@@ -71,20 +79,12 @@ async def create_workshop(
     files: list[UploadFile] | None = File(default=None),
 ) -> WorkshopResponse:
     settings = get_settings()
-    level_map = {
-        "LOW": "LOW", "BAJO": "LOW",
-        "MEDIUM": "MEDIUM", "INTERMEDIO": "MEDIUM",
-        "HIGH": "HIGH", "ALTO": "HIGH",
-    }
-    level = level_map.get(target_level.strip().upper())
-    if level is None:
-        raise HTTPException(status_code=400, detail="El nivel debe ser LOW, MEDIUM o HIGH.")
-    if len(learning_objective) > 1000:
-        raise HTTPException(status_code=400, detail="El objetivo no puede superar 1000 caracteres.")
-    if len(learning_context) > 2500:
-        raise HTTPException(status_code=400, detail="El contexto del curso no puede superar 2500 caracteres.")
-    if generation_type.strip().upper() not in {"WORKSHOP", "QUIZ"}:
-        raise HTTPException(status_code=400, detail="El tipo de generación debe ser WORKSHOP o QUIZ.")
+    try:
+        level = normalize_level(target_level)
+        kind = normalize_generation_type(generation_type)
+        check_text_limits(learning_objective, learning_context)
+    except InvalidRequest as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if file is not None and files:
         raise HTTPException(status_code=400, detail="Envía los materiales en un solo campo.")
@@ -116,7 +116,7 @@ async def create_workshop(
                 target_level=level,
                 learning_objective=learning_objective.strip(),
                 learning_context=learning_context.strip(),
-                generation_type=generation_type.strip().upper(),
+                generation_type=kind,
                 additional_materials=tuple(materials[1:]),
             ),
         )
