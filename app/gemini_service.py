@@ -67,7 +67,6 @@ def generate_workshop(
             validate_workshop(workshop, material_text)
         except InvalidWorkshop as invalid:
             raise GeminiGenerationError(str(invalid)) from invalid
-        logger.info("Gemini %s generated in %.2fs using %s", generation_type.lower(), monotonic() - started, settings.gemini_model)
         return finalize_workshop(workshop, subject=subject, target_level=target_level, quiz=quiz_mode)
     except GeminiGenerationError:
         raise
