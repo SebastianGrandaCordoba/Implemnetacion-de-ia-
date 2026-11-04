@@ -40,6 +40,11 @@ def objective_count(workshop: WorkshopResponse, _material: str) -> str | None:
         return "El taller no cumple la cantidad esperada de objetivos."
     return None
 
+def activity_minutes(workshop: WorkshopResponse, _material: str) -> str | None:
+    if any(not 5 <= activity.estimatedMinutes <= 60 for activity in workshop.activities):
+        return "Una actividad tiene una duración fuera del rango permitido."
+    return None
 
-RULES: list[Rule] = [activity_count, question_count, objective_count]
+
+RULES: list[Rule] = [activity_count, question_count, objective_count, activity_minutes]
 
