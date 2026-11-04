@@ -5,9 +5,9 @@ from google import genai
 from google.genai import types
 
 from app.config import Settings
-from app.domain.prompt import build_prompt, is_quiz
 from app.domain.errors import provider_message
 from app.domain.finalize import finalize_workshop
+from app.domain.prompt import build_prompt, is_quiz
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 

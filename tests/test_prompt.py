@@ -1,6 +1,13 @@
 import unittest
 
-from app.domain.prompt import DEFAULT_GUIDANCE, build_prompt, deliverable_name, deliverable_rules, is_quiz, level_guidance
+from app.domain.prompt import (
+    DEFAULT_GUIDANCE,
+    build_prompt,
+    deliverable_name,
+    deliverable_rules,
+    is_quiz,
+    level_guidance,
+)
 
 
 class LevelGuidanceTests(unittest.TestCase):
