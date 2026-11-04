@@ -42,7 +42,7 @@ class GenerateWorkshopTests(unittest.TestCase):
         self.assertIs(result, expected)
         self.assertEqual(calls[0], ("extract", "material.pdf", b"pdf-bytes", 5000))
         self.assertEqual(calls[1][0], "generate")
-        self.assertEqual(calls[1][2]["material_text"], "[Página 1] Variables")
+        self.assertEqual(calls[1][2]["material_text"], "[Material 1: material.pdf]\n[Página 1] Variables")
         self.assertEqual(calls[1][2]["learning_objective"], "Repasar")
         self.assertEqual(calls[1][2]["learning_context"], "")
         self.assertEqual(calls[1][2]["generation_type"], "WORKSHOP")
