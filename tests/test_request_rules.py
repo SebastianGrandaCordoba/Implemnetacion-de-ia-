@@ -41,3 +41,25 @@ class TextLimitTests(unittest.TestCase):
             check_text_limits("a" * 1001, "")
         with self.assertRaises(InvalidRequest):
             check_text_limits("", "b" * 2501)
+
+
+class FilenameTests(unittest.TestCase):
+    def test_paths_are_stripped_to_the_base_name(self) -> None:
+        self.assertEqual(safe_filename("C:\\docs\\Guía 1.pdf"), "Guía 1.pdf")
+        self.assertEqual(safe_filename("../../etc/clase.txt"), "clase.txt")
+
+    def test_unsupported_or_missing_names_are_rejected(self) -> None:
+        for name in (None, "", "virus.exe", "notas.pdf.sh", "a;b.pdf"):
+            with self.subTest(name=name), self.assertRaises(InvalidRequest):
+                safe_filename(name)
+
+    def test_material_count_between_one_and_six(self) -> None:
+        check_material_count(1)
+        check_material_count(6)
+        for count in (0, 7):
+            with self.subTest(count=count), self.assertRaises(InvalidRequest):
+                check_material_count(count)
+
+
+if __name__ == "__main__":
+    unittest.main()
