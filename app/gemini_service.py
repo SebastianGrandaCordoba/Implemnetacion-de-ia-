@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types
 
 from app.config import Settings
-from app.domain.prompt import level_guidance
+from app.domain.prompt import deliverable_name, deliverable_rules, is_quiz, level_guidance
 from app.schemas import WorkshopResponse
 
 logger = logging.getLogger(__name__)
@@ -33,13 +33,10 @@ def generate_workshop(
     if not settings.gemini_api_key:
         raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
 
-    quiz_mode = generation_type.strip().upper() == "QUIZ"
-    deliverable = "quiz breve de comprobación" if quiz_mode else "taller de refuerzo"
+    quiz_mode = is_quiz(generation_type)
+    deliverable = deliverable_name(generation_type)
     guidance = level_guidance(target_level)
-    response_instructions = (
-        "- El título debe comenzar con 'Quiz breve:'. El quiz es el producto principal: sus tres preguntas deben ser claras, autocontenidas y tener opciones, respuesta correcta y explicación. Las actividades describen cómo responderlo."
-        if quiz_mode else "- El título debe comenzar con 'Taller de refuerzo:'. Diseña una guía lista para entregar, que permita al estudiante trabajar sin que el docente tenga que completar instrucciones."
-    )
+    response_instructions = deliverable_rules(generation_type)
     prompt = f"""Crea un {deliverable} basado solo en el material delimitado.
 
 Materia: {subject}
