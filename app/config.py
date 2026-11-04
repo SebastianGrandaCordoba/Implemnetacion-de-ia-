@@ -14,6 +14,8 @@ class Settings:
     max_upload_bytes: int
     max_extracted_chars: int
     gemini_timeout_ms: int
+    generation_attempts: int = 2
+    cache_entries: int = 32
 
 
 def get_settings() -> Settings:
@@ -29,4 +31,6 @@ def get_settings() -> Settings:
         max_upload_bytes=int(os.getenv("MAX_UPLOAD_BYTES", "10485760")),
         max_extracted_chars=max(5000, min(30000, int(os.getenv("MAX_EXTRACTED_CHARS", "30000")))),
         gemini_timeout_ms=max(5000, min(75000, int(os.getenv("GEMINI_TIMEOUT_MS", "60000")))),
+        generation_attempts=max(1, min(3, int(os.getenv("GENERATION_ATTEMPTS", "2")))),
+        cache_entries=max(0, min(256, int(os.getenv("GENERATION_CACHE_ENTRIES", "32")))),
     )
