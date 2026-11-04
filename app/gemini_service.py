@@ -22,6 +22,16 @@ class GeminiGenerationError(RuntimeError):
     pass
 
 
+MAX_OUTPUT_TOKENS = 2300
+
+
+def create_client(settings: Settings) -> genai.Client:
+    return genai.Client(
+        api_key=settings.gemini_api_key,
+        http_options=types.HttpOptions(timeout=settings.gemini_timeout_ms),
+    )
+
+
 def generate_workshop(
     settings: Settings,
     *,
@@ -41,17 +51,13 @@ def generate_workshop(
 
     started = monotonic()
     try:
-        client = genai.Client(
-            api_key=settings.gemini_api_key,
-            http_options=types.HttpOptions(timeout=settings.gemini_timeout_ms),
-        )
-        response = client.models.generate_content(
+        response = create_client(settings).models.generate_content(
             model=settings.gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=WorkshopResponse,
-                max_output_tokens=2300,
+                max_output_tokens=MAX_OUTPUT_TOKENS,
             ),
         )
         if not response.text:
