@@ -46,8 +46,14 @@ def generate_workshop(
         raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
 
     quiz_mode = is_quiz(generation_type)
-    prompt = build_prompt(material_text=material_text, subject=subject, target_level=target_level, learning_objective=learning_objective,
-                          learning_context=learning_context, generation_type=generation_type)
+    prompt = build_prompt(
+        material_text=material_text,
+        subject=subject,
+        target_level=target_level,
+        learning_objective=learning_objective,
+        learning_context=learning_context,
+        generation_type=generation_type,
+    )
 
     started = monotonic()
     try:

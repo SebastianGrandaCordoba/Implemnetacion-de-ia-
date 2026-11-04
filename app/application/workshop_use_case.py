@@ -43,7 +43,8 @@ class GenerateWorkshop:
         for index, (filename, content) in enumerate(sources, start=1):
             if remaining < 500:
                 raise MaterialError(
-                    "Los materiales seleccionados juntos contienen demasiado texto. Selecciona menos archivos o archivos más breves."
+                    "Los materiales seleccionados juntos contienen demasiado texto. "
+                    "Selecciona menos archivos o archivos más breves."
                 )
             text = self._extract_material(filename, content, remaining)
             labeled_text = f"[Material {index}: {filename}]\n{text}"

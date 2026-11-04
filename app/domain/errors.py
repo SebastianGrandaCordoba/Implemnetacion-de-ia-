@@ -2,7 +2,8 @@
 
 RULES: list[tuple[tuple[str, ...], str]] = [
     (("429", "quota", "resource_exhausted", "rate limit"),
-     "Gemini alcanzó el límite o la cuota disponible. Espera un momento o revisa la cuota de la API y vuelve a intentar."),
+     "Gemini alcanzó el límite o la cuota disponible. "
+     "Espera un momento o revisa la cuota de la API y vuelve a intentar."),
     (("api key", "api_key", "permission_denied", "unauthorized", "401", "403"),
      "Gemini rechazó la credencial. Revisa GEMINI_API_KEY en el servicio de IA."),
     (("not found", "404", "model"),
