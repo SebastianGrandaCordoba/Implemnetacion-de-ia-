@@ -68,6 +68,22 @@ def answers_in_options(workshop: WorkshopResponse, _material: str) -> str | None
     return None
 
 
+def distinct_questions(workshop: WorkshopResponse, _material: str) -> str | None:
+    questions = [_plain(question.question) for question in workshop.assessment]
+    if len(set(questions)) != len(questions):
+        return "El taller repite preguntas de evaluación."
+    return None
+
+
+def option_count(workshop: WorkshopResponse, _material: str) -> str | None:
+    for question in workshop.assessment:
+        if question.options and not 2 <= len(question.options) <= 5:
+            return "Una pregunta de opción múltiple debe tener entre 2 y 5 opciones."
+        if len({_plain(option) for option in question.options}) != len(question.options):
+            return "Una pregunta repite opciones de respuesta."
+    return None
+
+
 LABEL = re.compile(r"\[(Página|Sección|Tabla|Línea) (\d+)\]")
 NO_LABELS = "fragmento inicial del material"
 
