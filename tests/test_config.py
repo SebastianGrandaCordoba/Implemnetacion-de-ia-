@@ -23,6 +23,12 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.max_extracted_chars, 30000)
         self.assertEqual(settings.gemini_timeout_ms, 5000)
 
+    def test_resilience_settings_are_clamped(self) -> None:
+        with mock.patch.dict(os.environ, {"GENERATION_ATTEMPTS": "9", "GENERATION_CACHE_ENTRIES": "-4"}, clear=True):
+            settings = get_settings()
+        self.assertEqual(settings.generation_attempts, 3)
+        self.assertEqual(settings.cache_entries, 0)
+
     def test_values_are_trimmed(self) -> None:
         with mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": "  token  "}, clear=True):
             self.assertEqual(get_settings().ai_service_token, "token")
