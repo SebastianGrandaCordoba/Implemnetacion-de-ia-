@@ -1,5 +1,6 @@
 import hmac
 import logging
+from time import monotonic
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
@@ -30,6 +31,7 @@ from app.gemini_service import (
 )
 from app.schemas import WorkshopResponse
 
+STARTED_AT = monotonic()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 app = FastAPI(
@@ -73,10 +75,12 @@ def require_backend_token(
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health() -> dict[str, str | int]:
     settings = get_settings()
     return {
         "status": "ok",
+        "version": app.version,
+        "uptimeSeconds": int(monotonic() - STARTED_AT),
         "provider": "gemini",
         "model": settings.gemini_model,
         "generationConfigured": str(bool(settings.gemini_api_key)).lower(),
