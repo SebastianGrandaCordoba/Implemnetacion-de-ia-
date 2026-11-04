@@ -93,6 +93,30 @@ Todas las rutas `/api/v1` exigen `X-AI-Service-Token`. Las respuestas incluyen `
 
 El archivo `render.yaml` propone el servicio web y sus variables. Al crear el servicio desde el repositorio, configura `GEMINI_API_KEY` y `AI_SERVICE_TOKEN` como secretos, `GEMINI_MODEL=gemini-3.5-flash-lite` y las mismas variables en el backend (`AI_SERVICE_URL` y `AI_SERVICE_TOKEN`). La aplicación migra automáticamente el valor anterior `gemini-3.8-flash` al modelo rápido. No pongas la clave Gemini en el frontend ni en el backend.
 
+## Configuración
+
+| Variable | Defecto | Rango |
+| --- | --- | --- |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | — |
+| `GEMINI_TIMEOUT_MS` | 60000 | 5000–75000 |
+| `MAX_UPLOAD_BYTES` | 10485760 | hasta 10 MB |
+| `MAX_EXTRACTED_CHARS` | 30000 | 5000–30000 |
+| `GENERATION_ATTEMPTS` | 2 | 1–3 (solo reintenta cuota y tiempo de espera) |
+| `GENERATION_CACHE_ENTRIES` | 32 | 0–256 (0 desactiva la caché) |
+| `GENERATIONS_PER_MINUTE` | 12 | 0–120 (0 desactiva el límite) |
+
+Un valor no numérico vuelve al valor por defecto en lugar de impedir el arranque.
+
+## Pruebas
+
+```bash
+pip install -r requirements-dev.txt
+make lint
+make test
+```
+
+Las pruebas usan documentos generados en memoria y un cliente Gemini falso, así que no consumen cuota ni necesitan clave. GitHub Actions ejecuta `ruff` y `pytest` en cada push.
+
 ## Tiempo de respuesta
 
 
