@@ -45,6 +45,11 @@ def activity_minutes(workshop: WorkshopResponse, _material: str) -> str | None:
         return "Una actividad tiene una duración fuera del rango permitido."
     return None
 
+def has_references(workshop: WorkshopResponse, _material: str) -> str | None:
+    if not workshop.sourceReferences:
+        return "El taller no incluye referencias al material."
+    return None
 
-RULES: list[Rule] = [activity_count, question_count, objective_count, activity_minutes]
+
+RULES: list[Rule] = [activity_count, question_count, objective_count, activity_minutes, has_references]
 
