@@ -52,6 +52,22 @@ def has_references(workshop: WorkshopResponse, _material: str) -> str | None:
         return "El taller no incluye referencias al material."
     return None
 
+def _plain(text: str) -> str:
+    return " ".join(text.lower().split())
+
+
+def answers_in_options(workshop: WorkshopResponse, _material: str) -> str | None:
+    """A multiple-choice answer key must point at one of its options, or the teacher grades wrong."""
+    for question in workshop.assessment:
+        if not question.options:
+            continue
+        answer = _plain(question.correctAnswer)
+        options = [_plain(option) for option in question.options]
+        if not any(answer == option or option.startswith(answer) or answer.startswith(option) for option in options):
+            return "Una pregunta de opción múltiple tiene una respuesta que no está entre sus opciones."
+    return None
+
+
 LABEL = re.compile(r"\[(Página|Sección|Tabla|Línea) (\d+)\]")
 NO_LABELS = "fragmento inicial del material"
 
