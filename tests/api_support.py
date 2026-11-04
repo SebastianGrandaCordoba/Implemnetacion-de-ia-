@@ -42,7 +42,6 @@ def client_with(use_case: FakeUseCase, token: str = TOKEN) -> TestClient:
     patcher = mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": token, "GEMINI_API_KEY": "k"})
     patcher.start()
     client = TestClient(app)
-    client.addCleanup = None
     client._patcher = patcher
     return client
 
