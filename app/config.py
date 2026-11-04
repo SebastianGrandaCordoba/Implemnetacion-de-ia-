@@ -19,6 +19,15 @@ class Settings:
     generations_per_minute: int = 12
 
 
+def _int(name: str, default: int, low: int, high: int) -> int:
+    """Reads a bounded integer; a typo in Render falls back to the default instead of crashing at boot."""
+    try:
+        value = int(os.getenv(name, str(default)).strip())
+    except ValueError:
+        return default
+    return max(low, min(high, value))
+
+
 def get_settings() -> Settings:
     configured_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
     # Render can keep the old blueprint variable after a code deploy. Prefer the
