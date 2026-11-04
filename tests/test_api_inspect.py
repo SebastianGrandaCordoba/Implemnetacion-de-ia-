@@ -19,7 +19,7 @@ class InspectEndpointTests(unittest.TestCase):
 
     def test_describes_each_file(self) -> None:
         files = [
-            ("files", ("tema.txt", "Fracciones\nDecimales".encode(), "text/plain")),
+            ("files", ("tema.txt", b"Fracciones\nDecimales", "text/plain")),
             ("files", ("clase.docx", docx(["Introducción"]), "application/octet-stream")),
         ]
         body = self.client.post(URL, files=files, headers=headers()).json()
