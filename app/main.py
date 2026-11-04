@@ -16,8 +16,12 @@ from app.adapters.resilience import (
 )
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
-from app.document_parser import MaterialError
+from app.document_parser import SUPPORTED_EXTENSIONS, MaterialError
 from app.domain.request_rules import (
+    GENERATION_TYPES,
+    MAX_CONTEXT_CHARS,
+    MAX_MATERIALS,
+    MAX_OBJECTIVE_CHARS,
     InvalidRequest,
     check_material_count,
     check_text_limits,
@@ -84,6 +88,22 @@ def health() -> dict[str, str | int]:
         "provider": "gemini",
         "model": settings.gemini_model,
         "generationConfigured": str(bool(settings.gemini_api_key)).lower(),
+    }
+
+
+@app.get("/api/v1/limits", dependencies=[Depends(require_backend_token)])
+def limits() -> dict[str, object]:
+    """Lets the backend show the teacher the real limits before uploading."""
+    settings = get_settings()
+    return {
+        "maxMaterials": MAX_MATERIALS,
+        "maxUploadBytes": settings.max_upload_bytes,
+        "maxExtractedChars": settings.max_extracted_chars,
+        "maxObjectiveChars": MAX_OBJECTIVE_CHARS,
+        "maxContextChars": MAX_CONTEXT_CHARS,
+        "formats": [extension.lstrip(".") for extension in SUPPORTED_EXTENSIONS],
+        "levels": ["LOW", "MEDIUM", "HIGH"],
+        "generationTypes": sorted(GENERATION_TYPES),
     }
 
 
