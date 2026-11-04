@@ -30,3 +30,10 @@ def normalize_generation_type(raw: str) -> str:
     if kind not in GENERATION_TYPES:
         raise InvalidRequest("El tipo de generación debe ser WORKSHOP o QUIZ.")
     return kind
+
+
+def check_text_limits(learning_objective: str, learning_context: str) -> None:
+    if len(learning_objective) > MAX_OBJECTIVE_CHARS:
+        raise InvalidRequest(f"El objetivo no puede superar {MAX_OBJECTIVE_CHARS} caracteres.")
+    if len(learning_context) > MAX_CONTEXT_CHARS:
+        raise InvalidRequest(f"El contexto del curso no puede superar {MAX_CONTEXT_CHARS} caracteres.")
