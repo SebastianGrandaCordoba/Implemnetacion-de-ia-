@@ -29,6 +29,16 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.generation_attempts, 3)
         self.assertEqual(settings.cache_entries, 0)
 
+    def test_invalid_numbers_fall_back_to_defaults(self) -> None:
+        with mock.patch.dict(os.environ, {"GEMINI_TIMEOUT_MS": "60s", "MAX_UPLOAD_BYTES": ""}, clear=True):
+            settings = get_settings()
+        self.assertEqual(settings.gemini_timeout_ms, 60000)
+        self.assertEqual(settings.max_upload_bytes, 10485760)
+
+    def test_upload_limit_cannot_exceed_ten_megabytes(self) -> None:
+        with mock.patch.dict(os.environ, {"MAX_UPLOAD_BYTES": "999999999"}, clear=True):
+            self.assertEqual(get_settings().max_upload_bytes, 10485760)
+
     def test_values_are_trimmed(self) -> None:
         with mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": "  token  "}, clear=True):
             self.assertEqual(get_settings().ai_service_token, "token")
