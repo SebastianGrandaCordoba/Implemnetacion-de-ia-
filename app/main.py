@@ -3,7 +3,8 @@ import logging
 from time import monotonic
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
+from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from app.adapters.gemini_workshop_generator import GeminiWorkshopAdapter
@@ -47,6 +48,18 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestContextMiddleware)
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    """Never leaks stack traces; gives the backend an id to find the log line."""
+    request_id = getattr(request.state, "request_id", "")
+    logger.exception("Unexpected error [%s]", request_id)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Ocurrió un error inesperado en el servicio de IA.", "requestId": request_id},
+        headers={"X-Request-ID": request_id} if request_id else None,
+    )
 
 # Composition root: the HTTP adapter wires application ports to infrastructure.
 _startup_settings = get_settings()
