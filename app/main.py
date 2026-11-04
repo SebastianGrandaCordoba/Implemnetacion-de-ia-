@@ -78,6 +78,21 @@ def require_backend_token(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No autorizado.")
 
 
+async def read_materials(uploads: list[UploadFile], max_bytes: int) -> list[tuple[str, bytes]]:
+    materials: list[tuple[str, bytes]] = []
+    total_size = 0
+    for upload in uploads:
+        filename = safe_filename(upload.filename)
+        raw = await upload.read(max_bytes + 1)
+        if not raw:
+            raise HTTPException(status_code=400, detail=f"El archivo {filename} está vacío.")
+        total_size += len(raw)
+        if total_size > max_bytes:
+            raise HTTPException(status_code=413, detail="Los materiales juntos superan el límite de 10 MB.")
+        materials.append((filename, raw))
+    return materials
+
+
 @app.get("/health")
 def health() -> dict[str, str | int]:
     settings = get_settings()
@@ -138,18 +153,7 @@ async def create_workshop(
     except InvalidRequest as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
-        materials: list[tuple[str, bytes]] = []
-        total_size = 0
-        for upload in uploads:
-            filename = safe_filename(upload.filename)
-            raw = await upload.read(settings.max_upload_bytes + 1)
-            if not raw:
-                raise HTTPException(status_code=400, detail=f"El archivo {filename} está vacío.")
-            total_size += len(raw)
-            if total_size > settings.max_upload_bytes:
-                raise HTTPException(status_code=413, detail="Los materiales juntos superan el límite de 10 MB.")
-            materials.append((filename, raw))
-
+        materials = await read_materials(uploads, settings.max_upload_bytes)
         return await run_in_threadpool(
             use_case.execute,
             settings,
