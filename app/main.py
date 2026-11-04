@@ -39,6 +39,11 @@ generate_workshop_use_case = GenerateWorkshop(
 )
 
 
+def get_use_case() -> GenerateWorkshop:
+    """FastAPI dependency so tests can swap the composition root."""
+    return generate_workshop_use_case
+
+
 def require_backend_token(
     x_ai_service_token: Annotated[str | None, Header()] = None,
 ) -> None:
@@ -76,6 +81,7 @@ async def create_workshop(
     generation_type: Annotated[str, Form(alias="generationType")] = "WORKSHOP",
     file: UploadFile | None = File(default=None),
     files: list[UploadFile] | None = File(default=None),
+    use_case: GenerateWorkshop = Depends(get_use_case),
 ) -> WorkshopResponse:
     settings = get_settings()
     try:
@@ -106,7 +112,7 @@ async def create_workshop(
             materials.append((filename, raw))
 
         return await run_in_threadpool(
-            generate_workshop_use_case.execute,
+            use_case.execute,
             settings,
             WorkshopRequest(
                 filename=materials[0][0],
