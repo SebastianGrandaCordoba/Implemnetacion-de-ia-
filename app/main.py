@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from starlette.concurrency import run_in_threadpool
 
 from app.adapters.gemini_workshop_generator import GeminiWorkshopAdapter
+from app.adapters.http_middleware import RequestContextMiddleware
 from app.adapters.material_extraction import DocumentMaterialAdapter
 from app.adapters.resilience import (
     CachedWorkshopGenerator,
@@ -36,6 +37,8 @@ app = FastAPI(
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
     version="1.0.0",
 )
+
+app.add_middleware(RequestContextMiddleware)
 
 # Composition root: the HTTP adapter wires application ports to infrastructure.
 _startup_settings = get_settings()
