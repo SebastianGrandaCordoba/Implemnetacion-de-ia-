@@ -23,3 +23,5 @@ services:
         value: "2"
       - key: GENERATION_CACHE_ENTRIES
         value: "32"
+      - key: GENERATIONS_PER_MINUTE
+        value: "12"
