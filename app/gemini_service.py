@@ -7,6 +7,7 @@ from google.genai import types
 from app.config import Settings
 from app.domain.prompt import build_prompt, is_quiz
 from app.domain.errors import provider_message
+from app.domain.finalize import finalize_workshop
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 
@@ -61,10 +62,7 @@ def generate_workshop(
         except InvalidWorkshop as invalid:
             raise GeminiGenerationError(str(invalid)) from invalid
         logger.info("Gemini %s generated in %.2fs using %s", generation_type.lower(), monotonic() - started, settings.gemini_model)
-        updates = {"subject": subject, "targetLevel": target_level}
-        if quiz_mode and not workshop.title.lower().startswith("quiz"):
-            updates["title"] = f"Quiz breve: {subject}"
-        return workshop.model_copy(update=updates)
+        return finalize_workshop(workshop, subject=subject, target_level=target_level, quiz=quiz_mode)
     except GeminiGenerationError:
         raise
     except Exception as exc:
