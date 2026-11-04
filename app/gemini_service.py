@@ -1,5 +1,4 @@
 import logging
-import re
 from time import monotonic
 
 from google import genai
@@ -7,6 +6,7 @@ from google.genai import types
 
 from app.config import Settings
 from app.domain.prompt import build_prompt, is_quiz
+from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 
 logger = logging.getLogger(__name__)
@@ -55,23 +55,10 @@ def generate_workshop(
         if not response.text:
             raise GeminiGenerationError("El modelo no devolvió contenido.")
         workshop = WorkshopResponse.model_validate_json(response.text)
-        if not 3 <= len(workshop.activities) <= 5:
-            raise GeminiGenerationError("El taller no cumple la cantidad esperada de actividades.")
-        if not 3 <= len(workshop.assessment) <= 5:
-            raise GeminiGenerationError("El taller no cumple la cantidad esperada de preguntas.")
-        if not 2 <= len(workshop.learningObjectives) <= 4:
-            raise GeminiGenerationError("El taller no cumple la cantidad esperada de objetivos.")
-        if any(not 5 <= activity.estimatedMinutes <= 60 for activity in workshop.activities):
-            raise GeminiGenerationError("Una actividad tiene una duración fuera del rango permitido.")
-        if not workshop.sourceReferences:
-            raise GeminiGenerationError("El taller no incluye referencias al material.")
-        valid_labels = set(re.findall(r"\[(Página|Sección|Tabla|Línea) (\d+)\]", material_text))
-        for reference in workshop.sourceReferences:
-            if valid_labels and not any(
-                re.search(rf"{label}\s*{number}(?!\d)", reference, flags=re.IGNORECASE)
-                for label, number in valid_labels
-            ) or not valid_labels and reference.strip().lower() != "fragmento inicial del material":
-                raise GeminiGenerationError("El taller cita una página o sección que no se pudo verificar.")
+        try:
+            validate_workshop(workshop, material_text)
+        except InvalidWorkshop as invalid:
+            raise GeminiGenerationError(str(invalid)) from invalid
         logger.info("Gemini %s generated in %.2fs using %s", generation_type.lower(), monotonic() - started, settings.gemini_model)
         updates = {"subject": subject, "targetLevel": target_level}
         if quiz_mode and not workshop.title.lower().startswith("quiz"):
