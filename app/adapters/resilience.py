@@ -88,7 +88,7 @@ class CachedWorkshopGenerator:
         self._entries.move_to_end(key)
         while len(self._entries) > self._max_entries:
             self._entries.popitem(last=False)
-        return result
+        return result.model_copy(deep=True)
 
     def __len__(self) -> int:
         return len(self._entries)
