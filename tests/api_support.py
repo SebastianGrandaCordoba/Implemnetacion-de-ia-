@@ -5,6 +5,7 @@ from unittest import mock
 
 from fastapi.testclient import TestClient
 
+from app.domain.rate_limit import SlidingWindowLimiter
 from app.main import app, get_use_case
 from app.schemas import WorkshopResponse
 
@@ -39,15 +40,19 @@ class FakeUseCase:
 
 def client_with(use_case: FakeUseCase, token: str = TOKEN) -> TestClient:
     app.dependency_overrides[get_use_case] = lambda: use_case
-    patcher = mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": token, "GEMINI_API_KEY": "k"})
-    patcher.start()
+    env = mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": token, "GEMINI_API_KEY": "k"})
+    # Each test gets an unlimited budget; rate-limit tests patch their own limiter.
+    limiter = mock.patch("app.main.generation_limiter", SlidingWindowLimiter(0))
+    env.start()
+    limiter.start()
     client = TestClient(app)
-    client._patcher = patcher
+    client._patchers = (env, limiter)
     return client
 
 
 def close(client: TestClient) -> None:
-    client._patcher.stop()
+    for patcher in client._patchers:
+        patcher.stop()
     app.dependency_overrides.clear()
 
 

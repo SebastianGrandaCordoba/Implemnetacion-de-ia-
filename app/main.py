@@ -18,6 +18,7 @@ from app.application.inspect_use_case import InspectMaterials
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
 from app.document_parser import SUPPORTED_EXTENSIONS, MaterialError
+from app.domain.rate_limit import SlidingWindowLimiter
 from app.domain.request_rules import (
     GENERATION_TYPES,
     MAX_CONTEXT_CHARS,
@@ -62,6 +63,19 @@ generate_workshop_use_case = GenerateWorkshop(
 
 
 inspect_use_case = InspectMaterials(DocumentMaterialAdapter())
+
+
+generation_limiter = SlidingWindowLimiter(_startup_settings.generations_per_minute)
+
+
+def limit_generations() -> None:
+    wait = generation_limiter.acquire("backend")
+    if wait is not None:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Se generaron muchos talleres seguidos. Espera un momento e inténtalo de nuevo.",
+            headers={"Retry-After": str(max(1, round(wait)))},
+        )
 
 
 def get_use_case() -> GenerateWorkshop:
@@ -157,7 +171,7 @@ async def inspect_materials(files: list[UploadFile] = File(...)) -> list[dict[st
 @app.post(
     "/api/v1/workshops/generate",
     response_model=WorkshopResponse,
-    dependencies=[Depends(require_backend_token)],
+    dependencies=[Depends(require_backend_token), Depends(limit_generations)],
 )
 async def create_workshop(
     subject: Annotated[str, Form(min_length=1, max_length=120)],
