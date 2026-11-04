@@ -14,6 +14,11 @@ class ValidateWorkshopTests(unittest.TestCase):
         with self.assertRaisesRegex(InvalidWorkshop, "actividades"):
             validate_workshop(workshop(activities=[], sourceReferences=[]), MATERIAL)
 
+    def test_default_rules_include_quiz_checks(self) -> None:
+        from app.domain.validation import RULES, answers_in_options, distinct_questions, option_count
+        for rule in (answers_in_options, distinct_questions, option_count):
+            self.assertIn(rule, RULES)
+
     def test_accepts_a_custom_rule_set(self) -> None:
         def no_long_titles(w, _m):
             return "Título largo" if len(w.title) > 10 else None
