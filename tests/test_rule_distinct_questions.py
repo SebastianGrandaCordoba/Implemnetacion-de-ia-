@@ -14,7 +14,8 @@ class DistinctQuestionsTests(unittest.TestCase):
         self.assertIsNone(distinct_questions(workshop(), ""))
 
     def test_repeated_questions_fail_ignoring_case(self) -> None:
-        repeated = workshop(assessment=[question("¿Qué es un ciclo?"), question("¿qué es  un ciclo?"), question("Otra")])
+        items = [question("¿Qué es un ciclo?"), question("¿qué es  un ciclo?"), question("Otra")]
+        repeated = workshop(assessment=items)
         self.assertIsNotNone(distinct_questions(repeated, ""))
 
 
