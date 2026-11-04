@@ -7,6 +7,11 @@ from starlette.concurrency import run_in_threadpool
 
 from app.adapters.gemini_workshop_generator import GeminiWorkshopAdapter
 from app.adapters.material_extraction import DocumentMaterialAdapter
+from app.adapters.resilience import (
+    CachedWorkshopGenerator,
+    RetryingWorkshopGenerator,
+    TimedWorkshopGenerator,
+)
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
 from app.document_parser import MaterialError
@@ -33,9 +38,16 @@ app = FastAPI(
 )
 
 # Composition root: the HTTP adapter wires application ports to infrastructure.
+_startup_settings = get_settings()
 generate_workshop_use_case = GenerateWorkshop(
     extract_material=DocumentMaterialAdapter(),
-    generate=GeminiWorkshopAdapter(),
+    generate=CachedWorkshopGenerator(
+        RetryingWorkshopGenerator(
+            TimedWorkshopGenerator(GeminiWorkshopAdapter()),
+            attempts=_startup_settings.generation_attempts,
+        ),
+        max_entries=_startup_settings.cache_entries,
+    ),
 )
 
 
