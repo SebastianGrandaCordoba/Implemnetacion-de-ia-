@@ -1,6 +1,6 @@
 import unittest
 
-from app.domain.validation import InvalidWorkshop, has_references, validate_workshop
+from app.domain.validation import has_references
 from app.schemas import AssessmentQuestion, WorkshopActivity, WorkshopResponse
 
 

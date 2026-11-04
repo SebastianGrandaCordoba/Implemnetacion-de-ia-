@@ -1,6 +1,6 @@
 import unittest
 
-from app.domain.validation import InvalidWorkshop, activity_minutes, validate_workshop
+from app.domain.validation import activity_minutes
 from app.schemas import AssessmentQuestion, WorkshopActivity, WorkshopResponse
 
 
