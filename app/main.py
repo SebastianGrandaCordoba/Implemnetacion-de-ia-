@@ -14,6 +14,7 @@ from app.adapters.resilience import (
     RetryingWorkshopGenerator,
     TimedWorkshopGenerator,
 )
+from app.application.inspect_use_case import InspectMaterials
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
 from app.document_parser import SUPPORTED_EXTENSIONS, MaterialError
@@ -58,6 +59,9 @@ generate_workshop_use_case = GenerateWorkshop(
         max_entries=_startup_settings.cache_entries,
     ),
 )
+
+
+inspect_use_case = InspectMaterials(DocumentMaterialAdapter())
 
 
 def get_use_case() -> GenerateWorkshop:
@@ -120,6 +124,34 @@ def limits() -> dict[str, object]:
         "levels": ["LOW", "MEDIUM", "HIGH"],
         "generationTypes": sorted(GENERATION_TYPES),
     }
+
+
+@app.post("/api/v1/materials/inspect", dependencies=[Depends(require_backend_token)])
+async def inspect_materials(files: list[UploadFile] = File(...)) -> list[dict[str, object]]:
+    """Shows what will be read from each file before spending a Gemini request."""
+    settings = get_settings()
+    try:
+        check_material_count(len(files))
+        materials = await read_materials(files, settings.max_upload_bytes)
+        stats = await run_in_threadpool(inspect_use_case.execute, materials, settings.max_extracted_chars)
+    except InvalidRequest as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except MaterialError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        for upload in files:
+            await upload.close()
+    return [
+        {
+            "filename": item.filename,
+            "characters": item.characters,
+            "words": item.words,
+            "units": item.units,
+            "estimatedTokens": item.estimated_tokens,
+            "preview": item.preview,
+        }
+        for item in stats
+    ]
 
 
 @app.post(
