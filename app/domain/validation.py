@@ -30,6 +30,11 @@ def activity_count(workshop: WorkshopResponse, _material: str) -> str | None:
         return "El taller no cumple la cantidad esperada de actividades."
     return None
 
+def question_count(workshop: WorkshopResponse, _material: str) -> str | None:
+    if not 3 <= len(workshop.assessment) <= 5:
+        return "El taller no cumple la cantidad esperada de preguntas."
+    return None
 
-RULES: list[Rule] = [activity_count]
+
+RULES: list[Rule] = [activity_count, question_count]
 
