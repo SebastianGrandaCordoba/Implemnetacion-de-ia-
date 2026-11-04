@@ -6,6 +6,7 @@ from google.genai import types
 
 from app.config import Settings
 from app.domain.prompt import build_prompt, is_quiz
+from app.domain.errors import provider_message
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 
@@ -70,15 +71,5 @@ def generate_workshop(
         logger.exception("Gemini workshop generation failed after %.2fs", monotonic() - started)
         # Keep provider diagnostics out of the response: they can contain account
         # metadata. Return only actionable, non-sensitive categories to the UI.
-        diagnostic = str(exc).lower()
-        if any(marker in diagnostic for marker in ("429", "quota", "resource_exhausted", "rate limit")):
-            message = "Gemini alcanzó el límite o la cuota disponible. Espera un momento o revisa la cuota de la API y vuelve a intentar."
-        elif any(marker in diagnostic for marker in ("api key", "api_key", "permission_denied", "unauthorized", "401", "403")):
-            message = "Gemini rechazó la credencial. Revisa GEMINI_API_KEY en el servicio de IA."
-        elif any(marker in diagnostic for marker in ("not found", "404", "model")):
-            message = "El modelo configurado para Gemini no está disponible. Revisa GEMINI_MODEL en el servicio de IA."
-        elif any(marker in diagnostic for marker in ("timeout", "timed out", "deadline")):
-            message = "Gemini tardó demasiado en responder. Prueba con un material más corto e inténtalo de nuevo."
-        else:
-            message = "Gemini no pudo generar el taller. Revisa la configuración y la cuota de la API e inténtalo de nuevo."
+        message = provider_message(str(exc))
         raise GeminiGenerationError(message) from exc
