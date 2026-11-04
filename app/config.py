@@ -16,6 +16,7 @@ class Settings:
     gemini_timeout_ms: int
     generation_attempts: int = 2
     cache_entries: int = 32
+    generations_per_minute: int = 12
 
 
 def get_settings() -> Settings:
@@ -33,4 +34,5 @@ def get_settings() -> Settings:
         gemini_timeout_ms=max(5000, min(75000, int(os.getenv("GEMINI_TIMEOUT_MS", "60000")))),
         generation_attempts=max(1, min(3, int(os.getenv("GENERATION_ATTEMPTS", "2")))),
         cache_entries=max(0, min(256, int(os.getenv("GENERATION_CACHE_ENTRIES", "32")))),
+        generations_per_minute=max(0, min(120, int(os.getenv("GENERATIONS_PER_MINUTE", "12")))),
     )
