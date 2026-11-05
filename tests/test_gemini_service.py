@@ -74,6 +74,30 @@ class GeminiServiceTests(unittest.TestCase):
         self.assertEqual(workshop.assessment[0].correctAnswer, "12")
         self.assertEqual(workshop.sourceReferences, ["Linea 1"])
 
+    def test_requests_use_low_thinking_and_enough_output(self) -> None:
+        seen = []
+
+        def generate_content(**kwargs):
+            seen.append(kwargs["config"])
+            return SimpleNamespace(text=payload())
+
+        self.run_with(SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)))
+        self.assertEqual(seen[0].thinking_config.thinking_level, "LOW")
+        self.assertGreaterEqual(seen[0].max_output_tokens, 4096)
+
+    def test_models_without_thinking_levels_fall_back(self) -> None:
+        configs = []
+
+        def generate_content(**kwargs):
+            configs.append(kwargs["config"])
+            if kwargs["config"].thinking_config is not None:
+                raise RuntimeError("400 INVALID_ARGUMENT: thinking_level is not supported for this model")
+            return SimpleNamespace(text=payload())
+
+        workshop = self.run_with(SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)))
+        self.assertEqual(workshop.subject, "Matemáticas")
+        self.assertEqual(len(configs), 2)
+
     def test_provider_errors_are_classified(self) -> None:
         with self.assertRaisesRegex(GeminiGenerationError, "cuota"):
             self.run_with(fake_client(error=RuntimeError("429 RESOURCE_EXHAUSTED")))
