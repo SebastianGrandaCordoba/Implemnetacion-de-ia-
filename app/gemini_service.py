@@ -7,8 +7,8 @@ from google.genai import types
 from app.config import Settings
 from app.domain.errors import provider_message
 from app.domain.finalize import finalize_workshop
-from app.domain.repair import repair_workshop
 from app.domain.prompt import build_prompt, is_quiz
+from app.domain.repair import repair_workshop
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 
@@ -23,7 +23,8 @@ class GeminiGenerationError(RuntimeError):
     pass
 
 
-MAX_OUTPUT_TOKENS = 2300
+# Thinking tokens count against the output budget; 2300 could cut the JSON in half.
+MAX_OUTPUT_TOKENS = 4096
 
 
 def create_client(settings: Settings) -> genai.Client:
@@ -31,6 +32,33 @@ def create_client(settings: Settings) -> genai.Client:
         api_key=settings.gemini_api_key,
         http_options=types.HttpOptions(timeout=settings.gemini_timeout_ms),
     )
+
+
+def generation_config(settings: Settings, *, thinking: bool = True) -> types.GenerateContentConfig:
+    config = {
+        "response_mime_type": "application/json",
+        "response_schema": WorkshopResponse,
+        "max_output_tokens": MAX_OUTPUT_TOKENS,
+    }
+    if thinking and settings.gemini_thinking_level:
+        # A workshop is structured writing, not a puzzle: low thinking answers much faster.
+        config["thinking_config"] = types.ThinkingConfig(thinking_level=settings.gemini_thinking_level)
+    return types.GenerateContentConfig(**config)
+
+
+def _generate(client, settings: Settings, prompt: str):
+    try:
+        return client.models.generate_content(
+            model=settings.gemini_model, contents=prompt, config=generation_config(settings)
+        )
+    except Exception as exc:
+        if "thinking" not in str(exc).lower():
+            raise
+        # Some models reject a thinking level; fall back to their default instead of failing.
+        logger.warning("Model %s rejected thinking level; retrying without it", settings.gemini_model)
+        return client.models.generate_content(
+            model=settings.gemini_model, contents=prompt, config=generation_config(settings, thinking=False)
+        )
 
 
 def generate_workshop(
@@ -58,15 +86,7 @@ def generate_workshop(
 
     started = monotonic()
     try:
-        response = create_client(settings).models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=WorkshopResponse,
-                max_output_tokens=MAX_OUTPUT_TOKENS,
-            ),
-        )
+        response = _generate(create_client(settings), settings, prompt)
         if not response.text:
             raise GeminiGenerationError("El modelo no devolvió contenido.")
         workshop = repair_workshop(WorkshopResponse.model_validate_json(response.text), material_text)
