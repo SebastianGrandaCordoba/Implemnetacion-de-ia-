@@ -153,7 +153,9 @@ def limits() -> dict[str, object]:
         "formats": [extension.lstrip(".") for extension in SUPPORTED_EXTENSIONS],
         "levels": ["LOW", "MEDIUM", "HIGH"],
         "generationTypes": sorted(GENERATION_TYPES),
-        "activityStyles": [{"id": style.id, "label": style.label, "extended": style.extended} for style in STYLES.values()],
+        "activityStyles": [
+            {"id": style.id, "label": style.label, "extended": style.extended} for style in STYLES.values()
+        ],
     }
 
 
