@@ -23,6 +23,7 @@ class WorkshopRequest:
     learning_context: str = ""
     generation_type: str = "WORKSHOP"
     additional_materials: tuple[tuple[str, bytes], ...] = ()
+    activity_styles: tuple[str, ...] = ()
 
 
 class GenerateWorkshop:
@@ -59,4 +60,5 @@ class GenerateWorkshop:
             learning_objective=request.learning_objective,
             learning_context=request.learning_context,
             generation_type=request.generation_type,
+            activity_styles=request.activity_styles,
         )

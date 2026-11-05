@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 
 from app.config import Settings
+from app.domain.activity_styles import CLASS_MINUTES, max_minutes
 from app.domain.errors import provider_message
 from app.domain.finalize import finalize_workshop
 from app.domain.prompt import build_prompt, is_quiz
@@ -70,6 +71,7 @@ def generate_workshop(
     learning_objective: str,
     learning_context: str = "",
     generation_type: str = "WORKSHOP",
+    activity_styles: tuple[str, ...] = (),
 ) -> WorkshopResponse:
     if not settings.gemini_api_key:
         raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
@@ -82,16 +84,18 @@ def generate_workshop(
         learning_objective=learning_objective,
         learning_context=learning_context,
         generation_type=generation_type,
+        activity_styles=activity_styles,
     )
+    limit = CLASS_MINUTES if quiz_mode else max_minutes(activity_styles)
 
     started = monotonic()
     try:
         response = _generate(create_client(settings), settings, prompt)
         if not response.text:
             raise GeminiGenerationError("El modelo no devolvió contenido.")
-        workshop = repair_workshop(WorkshopResponse.model_validate_json(response.text), material_text)
+        workshop = repair_workshop(WorkshopResponse.model_validate_json(response.text), material_text, limit)
         try:
-            validate_workshop(workshop, material_text)
+            validate_workshop(workshop, material_text, max_minutes=limit)
         except InvalidWorkshop as invalid:
             raise GeminiGenerationError(str(invalid)) from invalid
         return finalize_workshop(workshop, subject=subject, target_level=target_level, quiz=quiz_mode)

@@ -25,4 +25,5 @@ class WorkshopGenerator(Protocol):
         learning_objective: str,
         learning_context: str,
         generation_type: str,
+        activity_styles: tuple[str, ...] = (),
     ) -> WorkshopResponse: ...

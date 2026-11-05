@@ -16,6 +16,7 @@ class GeminiWorkshopAdapter:
         learning_objective: str,
         learning_context: str,
         generation_type: str = "WORKSHOP",
+        activity_styles: tuple[str, ...] = (),
     ) -> WorkshopResponse:
         return generate_workshop(
             settings,
@@ -25,4 +26,5 @@ class GeminiWorkshopAdapter:
             learning_objective=learning_objective,
             learning_context=learning_context,
             generation_type=generation_type,
+            activity_styles=activity_styles,
         )
