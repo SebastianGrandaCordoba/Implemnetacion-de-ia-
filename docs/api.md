@@ -23,7 +23,12 @@ Sin autenticación. Devuelve `status`, `version`, `uptimeSeconds`, `provider`, `
 
 ## POST /api/v1/workshops/generate
 Campos: `subject`, `targetLevel`, `learningObjective`, `learningContext`, `generationType`
-(`WORKSHOP` o `QUIZ`) y `file` o hasta seis `files`. Responde el taller completo.
+(`WORKSHOP` o `QUIZ`), `activityStyles` y `file` o hasta seis `files`. Responde el taller completo.
+
+`activityStyles` es opcional: hasta tres de `GUIDED` (ejercicios guiados, por defecto), `CODE` (programar
+código), `APP` (construir una aplicación), `DEPLOY` (desplegar en internet), `CASE` (caso de estudio) y `TEAM`
+(proyecto en equipo), separados por comas. `CODE`, `APP`, `DEPLOY` y `TEAM` permiten actividades de hasta
+120 minutos con etapas en clase y fuera de ella; el resto se mantiene en una sesión de clase.
 Puede responder 429 con `Retry-After` si se superan las generaciones por minuto.
 
 ## Errores
