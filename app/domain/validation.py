@@ -7,6 +7,7 @@ Each rule is a small function (Specification pattern): it returns an error messa
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Callable
 
 from app.schemas import WorkshopResponse
@@ -88,8 +89,14 @@ LABEL = re.compile(r"\[(Página|Sección|Tabla|Línea) (\d+)\]")
 NO_LABELS = "fragmento inicial del material"
 
 
+def _without_accents(text: str) -> str:
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+
+
 def _cites(reference: str, label: str, number: str) -> bool:
-    return re.search(rf"{label}\s*{number}(?!\d)", reference, flags=re.IGNORECASE) is not None
+    """Matches "Página 2", "pagina 2" or "[Página 2]"; the model often drops accents."""
+    pattern = rf"{_without_accents(label)}\s*{number}(?!\d)"
+    return re.search(pattern, _without_accents(reference), flags=re.IGNORECASE) is not None
 
 
 def verifiable_references(workshop: WorkshopResponse, material: str) -> str | None:
