@@ -29,6 +29,11 @@ class RepairTests(unittest.TestCase):
         minutes = [a.estimatedMinutes for a in repair_workshop(workshop(activities=activities), MATERIAL).activities]
         self.assertEqual(minutes, [5, 30, 60])
 
+    def test_extended_work_keeps_longer_activities(self) -> None:
+        activities = [WorkshopActivity(title="A", instructions="1.", estimatedMinutes=m) for m in (90, 200, 30)]
+        repaired = repair_workshop(workshop(activities=activities), MATERIAL, max_minutes=120)
+        self.assertEqual([a.estimatedMinutes for a in repaired.activities], [90, 120, 30])
+
     def test_repeated_questions_are_dropped(self) -> None:
         items = [question("¿Qué es?"), question("¿qué  es?"), question("Otra"), question("Otra más")]
         repaired = repair_workshop(workshop(assessment=items), MATERIAL)
