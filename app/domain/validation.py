@@ -20,9 +20,11 @@ class InvalidWorkshop(ValueError):
 
 
 def validate_workshop(
-    workshop: WorkshopResponse, material_text: str, rules: list[Rule] | None = None
+    workshop: WorkshopResponse, material_text: str, rules: list[Rule] | None = None, max_minutes: int = 60
 ) -> WorkshopResponse:
-    for rule in rules or RULES:
+    if rules is None:
+        rules = [activity_minutes_up_to(max_minutes) if rule is activity_minutes else rule for rule in RULES]
+    for rule in rules:
         problem = rule(workshop, material_text)
         if problem:
             raise InvalidWorkshop(problem)
@@ -43,10 +45,18 @@ def objective_count(workshop: WorkshopResponse, _material: str) -> str | None:
         return "El taller no cumple la cantidad esperada de objetivos."
     return None
 
-def activity_minutes(workshop: WorkshopResponse, _material: str) -> str | None:
-    if any(not 5 <= activity.estimatedMinutes <= 60 for activity in workshop.activities):
-        return "Una actividad tiene una duración fuera del rango permitido."
-    return None
+def activity_minutes_up_to(limit: int) -> Rule:
+    """Each activity lasts between 5 minutes and `limit` (60 for class work, 120 for code or projects)."""
+    def rule(workshop: WorkshopResponse, _material: str) -> str | None:
+        if any(not 5 <= activity.estimatedMinutes <= limit for activity in workshop.activities):
+            return "Una actividad tiene una duración fuera del rango permitido."
+        return None
+
+    rule.__name__ = f"activity_minutes_up_to_{limit}"
+    return rule
+
+
+activity_minutes = activity_minutes_up_to(60)
 
 def has_references(workshop: WorkshopResponse, _material: str) -> str | None:
     if not workshop.sourceReferences:
