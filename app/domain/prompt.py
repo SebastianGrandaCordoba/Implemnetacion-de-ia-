@@ -57,7 +57,7 @@ Reglas de contenido:
 - Cada actividad debe nombrar una acción concreta y explicar instrucciones numeradas (1., 2., 3.) con datos y contexto específicos del material, no solo decir “analiza” o “investiga”. Dentro del campo de instrucciones usa saltos de línea y esta estructura: “Propósito: …” / “Pasos:” / “1. …” / “2. …” / “3. …” / “Evidencia: …”. Indica un producto verificable (respuesta, diagrama, tabla, solución razonada o explicación) y estima minutos. Máximo 100 palabras por actividad.
 - La tercera actividad debe transferir el concepto a un caso nuevo o cerrar con una reflexión comprobable, según el material.
 - Distribuye el tiempo de manera realista: las tres actividades juntas deben durar entre 25 y 50 minutos.
-- Cada pregunta de evaluación debe comprobar un aprendizaje distinto. Incluye opciones plausibles, respuesta correcta y una explicación breve que enseñe por qué y por qué una opción tentadora no aplica.
+- Cada pregunta de evaluación debe comprobar un aprendizaje distinto. Incluye entre 2 y 5 opciones plausibles y distintas, una respuesta correcta copiada textualmente de una de esas opciones y una explicación breve que enseñe por qué y por qué una opción tentadora no aplica.
 - No repitas las mismas preguntas o la misma tarea con palabras distintas.
 - Usa el contexto para priorizar; no atribuyas causas del bajo rendimiento.
 - Cita referencias breves y exactas del material ([Página N], [Sección N], [Tabla N] o [Línea N]); nunca inventes páginas o secciones. Si el material no incluye etiquetas verificables, escribe en la referencia “Fragmento inicial del material” y no fabriques una etiqueta.
