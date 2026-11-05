@@ -17,6 +17,7 @@ class Settings:
     generation_attempts: int = 2
     cache_entries: int = 32
     generations_per_minute: int = 12
+    gemini_thinking_level: str = "LOW"
 
 
 def _int(name: str, default: int, low: int, high: int) -> int:
@@ -26,6 +27,12 @@ def _int(name: str, default: int, low: int, high: int) -> int:
     except ValueError:
         return default
     return max(low, min(high, value))
+
+
+def _thinking_level(raw: str) -> str:
+    """MINIMAL, LOW, MEDIUM or HIGH; OFF (or empty) leaves the model's default."""
+    level = raw.strip().upper()
+    return level if level in {"MINIMAL", "LOW", "MEDIUM", "HIGH"} else ""
 
 
 def get_settings() -> Settings:
@@ -44,4 +51,5 @@ def get_settings() -> Settings:
         generation_attempts=_int("GENERATION_ATTEMPTS", 2, 1, 3),
         cache_entries=_int("GENERATION_CACHE_ENTRIES", 32, 0, 256),
         generations_per_minute=_int("GENERATIONS_PER_MINUTE", 12, 0, 120),
+        gemini_thinking_level=_thinking_level(os.getenv("GEMINI_THINKING_LEVEL", "LOW")),
     )
