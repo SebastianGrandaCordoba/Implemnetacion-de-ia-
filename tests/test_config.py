@@ -39,6 +39,14 @@ class SettingsTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {"MAX_UPLOAD_BYTES": "999999999"}, clear=True):
             self.assertEqual(get_settings().max_upload_bytes, 10485760)
 
+    def test_thinking_level_defaults_to_low_and_can_be_disabled(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(get_settings().gemini_thinking_level, "LOW")
+        with mock.patch.dict(os.environ, {"GEMINI_THINKING_LEVEL": "off"}, clear=True):
+            self.assertEqual(get_settings().gemini_thinking_level, "")
+        with mock.patch.dict(os.environ, {"GEMINI_THINKING_LEVEL": " minimal "}, clear=True):
+            self.assertEqual(get_settings().gemini_thinking_level, "MINIMAL")
+
     def test_values_are_trimmed(self) -> None:
         with mock.patch.dict(os.environ, {"AI_SERVICE_TOKEN": "  token  "}, clear=True):
             self.assertEqual(get_settings().ai_service_token, "token")
