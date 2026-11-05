@@ -7,6 +7,7 @@ from google.genai import types
 from app.config import Settings
 from app.domain.errors import provider_message
 from app.domain.finalize import finalize_workshop
+from app.domain.repair import repair_workshop
 from app.domain.prompt import build_prompt, is_quiz
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
@@ -68,7 +69,7 @@ def generate_workshop(
         )
         if not response.text:
             raise GeminiGenerationError("El modelo no devolvió contenido.")
-        workshop = WorkshopResponse.model_validate_json(response.text)
+        workshop = repair_workshop(WorkshopResponse.model_validate_json(response.text), material_text)
         try:
             validate_workshop(workshop, material_text)
         except InvalidWorkshop as invalid:
