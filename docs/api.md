@@ -16,8 +16,9 @@ Sin autenticación. Devuelve `status`, `version`, `uptimeSeconds`, `provider`, `
 ## POST /api/v1/materials/inspect
 `multipart/form-data` con uno a seis `files`. No llama a Gemini.
 ```json
-[{"filename": "guia.pdf", "characters": 5120, "words": 830, "units": {"Página": 4},
-  "estimatedTokens": 1280, "preview": "Ecosistemas y cadenas tróficas..."}]
+{"totalCharacters": 5120, "maxExtractedChars": 30000, "fitsLimit": true,
+ "materials": [{"filename": "guia.pdf", "characters": 5120, "words": 830, "units": {"Página": 4},
+                "estimatedTokens": 1280, "preview": "Ecosistemas y cadenas tróficas..."}]}
 ```
 
 ## POST /api/v1/workshops/generate
