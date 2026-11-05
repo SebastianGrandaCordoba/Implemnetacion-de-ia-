@@ -29,20 +29,27 @@ class RetryingWorkshopGenerator:
         attempts: int = 2,
         base_delay: float = 1.5,
         sleep: Callable[[float], None] = time.sleep,
+        budget_seconds: float = 25,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._inner = inner
         self._attempts = max(1, attempts)
         self._base_delay = base_delay
         self._sleep = sleep
+        self._budget = budget_seconds
+        self._clock = clock
 
     def __call__(self, settings, **request) -> WorkshopResponse:
+        started = self._clock()
         for attempt in range(1, self._attempts + 1):
             try:
                 return self._inner(settings, **request)
             except GeminiGenerationError as exc:
-                if attempt == self._attempts or not is_retryable(str(exc)):
-                    raise
                 delay = self._base_delay * 2 ** (attempt - 1)
+                # Only retry while a second full generation still fits before the backend gives up.
+                late = self._clock() - started + delay > self._budget
+                if attempt == self._attempts or late or not is_retryable(str(exc)):
+                    raise
                 logger.info("Retrying workshop generation in %.1fs (attempt %d)", delay, attempt + 1)
                 self._sleep(delay)
         raise AssertionError("unreachable")
