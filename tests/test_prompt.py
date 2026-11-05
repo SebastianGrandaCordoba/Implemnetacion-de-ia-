@@ -46,5 +46,12 @@ class BuildPromptTests(unittest.TestCase):
         self.assertIn("El docente no agregó contexto", prompt)
 
 
+class AnswerKeyInstructionTests(unittest.TestCase):
+    def test_prompt_matches_the_answer_key_rule(self) -> None:
+        prompt = build_prompt(material_text="x", subject="M", target_level="LOW", learning_objective="")
+        self.assertIn("copiada textualmente de una de esas opciones", prompt)
+        self.assertIn("entre 2 y 5 opciones", prompt)
+
+
 if __name__ == "__main__":
     unittest.main()
