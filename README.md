@@ -8,6 +8,8 @@ Servicio Python separado que recibe material de estudio y genera un taller de re
 
 El caso de uso `GenerateWorkshop` coordina la extracción y generación mediante los puertos definidos en `app/application/ports.py`. `DocumentMaterialAdapter` y `GeminiWorkshopAdapter` son adaptadores de salida; `app/main.py` es el adaptador HTTP de entrada y el punto de composición. Esto permite probar el flujo con dependencias simuladas y cambiar el proveedor o parser sin cambiar la ruta pública.
 
+Más detalle en [docs/architecture.md](docs/architecture.md), [docs/api.md](docs/api.md) y [docs/quality-rules.md](docs/quality-rules.md).
+
 ### Estructura
 
 ```
