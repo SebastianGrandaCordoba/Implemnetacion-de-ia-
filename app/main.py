@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FairTeam AI Service",
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
-    version="1.2.0",
+    version="1.3.0",
 )
 
 app.add_middleware(RequestContextMiddleware)

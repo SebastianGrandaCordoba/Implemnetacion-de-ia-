@@ -1,5 +1,11 @@
 # Cambios
 
+## 1.3.0
+- Tipos de trabajo al crear un taller: ejercicios guiados, programar código, construir una aplicación,
+  desplegar en internet, caso de estudio y proyecto en equipo (hasta tres a la vez).
+- Los trabajos de código, aplicación, despliegue y equipo se plantean como retos por etapas, con más tiempo
+  por actividad (hasta 120 minutos) y entregables verificables (repositorio, pruebas, URL pública).
+
 ## 1.2.0
 - Generación más rápida: nivel de razonamiento bajo y más margen de salida para no cortar el JSON.
 - Reparación automática de defectos menores antes de validar, para rechazar menos talleres.
