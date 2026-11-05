@@ -41,6 +41,15 @@ class RetryTests(unittest.TestCase):
         self.assertEqual(inner.calls, 1)
         self.assertEqual(self.delays, [])
 
+    def test_slow_failures_are_not_retried(self) -> None:
+        ticks = iter([0.0, 30.0])
+        inner = Flaky(QUOTA)
+        retrying = RetryingWorkshopGenerator(inner, attempts=3, base_delay=1, sleep=self.delays.append,
+                                             budget_seconds=25, clock=lambda: next(ticks))
+        with self.assertRaises(GeminiGenerationError):
+            retrying(None)
+        self.assertEqual(inner.calls, 1)
+
     def test_gives_up_after_the_last_attempt(self) -> None:
         inner = Flaky(QUOTA, QUOTA)
         with self.assertRaises(GeminiGenerationError):
