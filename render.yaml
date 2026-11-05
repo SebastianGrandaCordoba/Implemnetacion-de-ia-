@@ -25,3 +25,5 @@ services:
         value: "32"
       - key: GENERATIONS_PER_MINUTE
         value: "12"
+      - key: GEMINI_THINKING_LEVEL
+        value: LOW
