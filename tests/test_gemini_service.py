@@ -67,6 +67,13 @@ class GeminiServiceTests(unittest.TestCase):
         with self.assertRaises(GeminiGenerationError):
             self.run_with(fake_client(payload(sourceReferences=[])))
 
+    def test_fixable_defects_are_repaired_instead_of_rejected(self) -> None:
+        questions = [{"question": f"P{i}", "options": ["10", "12"], "correctAnswer": "B", "explanation": "E"}
+                     for i in range(3)]
+        workshop = self.run_with(fake_client(payload(assessment=questions, sourceReferences=["Linea 1", "Página 9"])))
+        self.assertEqual(workshop.assessment[0].correctAnswer, "12")
+        self.assertEqual(workshop.sourceReferences, ["Linea 1"])
+
     def test_provider_errors_are_classified(self) -> None:
         with self.assertRaisesRegex(GeminiGenerationError, "cuota"):
             self.run_with(fake_client(error=RuntimeError("429 RESOURCE_EXHAUSTED")))
