@@ -19,6 +19,13 @@ class ValidateWorkshopTests(unittest.TestCase):
         for rule in (answers_in_options, distinct_questions, option_count):
             self.assertIn(rule, RULES)
 
+    def test_longer_activities_pass_only_with_a_higher_limit(self) -> None:
+        from app.schemas import WorkshopActivity
+        long = workshop(activities=[WorkshopActivity(title="A", instructions="1.", estimatedMinutes=90)] * 3)
+        with self.assertRaises(InvalidWorkshop):
+            validate_workshop(long, MATERIAL)
+        validate_workshop(long, MATERIAL, max_minutes=120)
+
     def test_accepts_a_custom_rule_set(self) -> None:
         def no_long_titles(w, _m):
             return "Título largo" if len(w.title) > 10 else None
