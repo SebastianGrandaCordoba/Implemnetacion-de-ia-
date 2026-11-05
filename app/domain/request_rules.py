@@ -50,3 +50,18 @@ def safe_filename(raw: str | None) -> str:
 def check_material_count(count: int) -> None:
     if count < 1 or count > MAX_MATERIALS:
         raise InvalidRequest(f"Adjunta entre 1 y {MAX_MATERIALS} materiales.")
+
+
+def normalize_activity_styles(raw: str) -> tuple[str, ...]:
+    """Accepts "CODE,DEPLOY" (any case or spacing); empty means guided exercises."""
+    from app.domain.activity_styles import DEFAULT, MAX_STYLES, STYLES
+
+    chosen = tuple(dict.fromkeys(part.strip().upper() for part in raw.split(",") if part.strip()))
+    if not chosen:
+        return DEFAULT
+    unknown = [style for style in chosen if style not in STYLES]
+    if unknown:
+        raise InvalidRequest("Tipo de actividad no reconocido: " + ", ".join(unknown) + ".")
+    if len(chosen) > MAX_STYLES:
+        raise InvalidRequest(f"Elige hasta {MAX_STYLES} tipos de actividad.")
+    return chosen
