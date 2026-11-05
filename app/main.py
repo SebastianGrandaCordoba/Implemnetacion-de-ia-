@@ -19,6 +19,7 @@ from app.application.inspect_use_case import InspectMaterials
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
 from app.document_parser import SUPPORTED_EXTENSIONS, MaterialError
+from app.domain.activity_styles import STYLES
 from app.domain.rate_limit import SlidingWindowLimiter
 from app.domain.request_rules import (
     GENERATION_TYPES,
@@ -28,6 +29,7 @@ from app.domain.request_rules import (
     InvalidRequest,
     check_material_count,
     check_text_limits,
+    normalize_activity_styles,
     normalize_generation_type,
     normalize_level,
     safe_filename,
@@ -151,6 +153,7 @@ def limits() -> dict[str, object]:
         "formats": [extension.lstrip(".") for extension in SUPPORTED_EXTENSIONS],
         "levels": ["LOW", "MEDIUM", "HIGH"],
         "generationTypes": sorted(GENERATION_TYPES),
+        "activityStyles": [{"id": style.id, "label": style.label, "extended": style.extended} for style in STYLES.values()],
     }
 
 
@@ -199,6 +202,7 @@ async def create_workshop(
     learning_objective: Annotated[str, Form(alias="learningObjective")] = "",
     learning_context: Annotated[str, Form(alias="learningContext")] = "",
     generation_type: Annotated[str, Form(alias="generationType")] = "WORKSHOP",
+    activity_styles: Annotated[str, Form(alias="activityStyles", max_length=80)] = "",
     file: UploadFile | None = File(default=None),
     files: list[UploadFile] | None = File(default=None),
     use_case: GenerateWorkshop = Depends(get_use_case),
@@ -207,6 +211,7 @@ async def create_workshop(
     try:
         level = normalize_level(target_level)
         kind = normalize_generation_type(generation_type)
+        styles = normalize_activity_styles(activity_styles)
         check_text_limits(learning_objective, learning_context)
     except InvalidRequest as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -231,6 +236,7 @@ async def create_workshop(
                 learning_objective=learning_objective.strip(),
                 learning_context=learning_context.strip(),
                 generation_type=kind,
+                activity_styles=styles,
                 additional_materials=tuple(materials[1:]),
             ),
         )
