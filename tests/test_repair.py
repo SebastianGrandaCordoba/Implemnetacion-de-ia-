@@ -1,7 +1,7 @@
 import unittest
 
 from app.domain.repair import repair_workshop
-from app.domain.validation import validate_workshop
+from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import AssessmentQuestion, WorkshopActivity
 from tests.workshops import workshop
 
@@ -62,7 +62,7 @@ class RepairTests(unittest.TestCase):
 
     def test_only_invented_citations_still_fail_validation(self) -> None:
         repaired = repair_workshop(workshop(sourceReferences=["Página 40"]), MATERIAL)
-        with self.assertRaises(Exception):
+        with self.assertRaises(InvalidWorkshop):
             validate_workshop(repaired, MATERIAL)
 
     def test_repaired_defects_pass_validation(self) -> None:
