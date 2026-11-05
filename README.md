@@ -106,6 +106,12 @@ El archivo `render.yaml` propone el servicio web y sus variables. Al crear el se
 | `GENERATION_ATTEMPTS` | 2 | 1–3 (solo reintenta cuota y tiempo de espera) |
 | `GENERATION_CACHE_ENTRIES` | 32 | 0–256 (0 desactiva la caché) |
 | `GENERATIONS_PER_MINUTE` | 12 | 0–120 (0 desactiva el límite) |
+| `GEMINI_THINKING_LEVEL` | `LOW` | `MINIMAL`, `LOW`, `MEDIUM`, `HIGH` u `OFF` |
+
+Antes de validar, el servicio corrige defectos pequeños del taller (actividades de más, minutos fuera de rango,
+preguntas u opciones repetidas, respuestas escritas como letra, citas inventadas junto a citas reales). Una
+respuesta que no coincide con ninguna opción convierte la pregunta en abierta en vez de dar una clave errónea.
+Solo se rechaza lo que no se puede corregir sin inventar contenido.
 
 Un valor no numérico vuelve al valor por defecto en lugar de impedir el arranque.
 
