@@ -19,5 +19,14 @@ class SuccessTests(ApiCase):
         self.assertEqual(request.learning_objective, "Células")
 
 
+class ActivityStyleRequestTests(ApiCase):
+    def test_activity_types_reach_the_use_case(self) -> None:
+        self.post([txt()], activityStyles="code, deploy")
+        self.assertEqual(self.use_case.requests[0].activity_styles, ("CODE", "DEPLOY"))
+
+    def test_unknown_activity_types_are_rejected(self) -> None:
+        self.assertRejected(self.post([txt()], activityStyles="DANCE"), 400, "no reconocido")
+
+
 if __name__ == "__main__":
     unittest.main()
