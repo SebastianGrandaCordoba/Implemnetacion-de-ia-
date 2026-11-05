@@ -18,13 +18,13 @@ MAX_OPTIONS = 5
 _LETTER = re.compile(r"^\(?([a-e])[).:]?$", flags=re.IGNORECASE)
 
 
-def repair_workshop(workshop: WorkshopResponse, material_text: str) -> WorkshopResponse:
+def repair_workshop(workshop: WorkshopResponse, material_text: str, max_minutes: int = 60) -> WorkshopResponse:
     return workshop.model_copy(
         update={
             "learningObjectives": _unique([o.strip() for o in workshop.learningObjectives if o.strip()])[
                 :MAX_OBJECTIVES
             ],
-            "activities": [_repair_activity(a) for a in workshop.activities][:MAX_ACTIVITIES],
+            "activities": [_repair_activity(a, max_minutes) for a in workshop.activities][:MAX_ACTIVITIES],
             "assessment": _repair_questions(workshop.assessment)[:MAX_QUESTIONS],
             "sourceReferences": _repair_references(workshop.sourceReferences, material_text),
         }
@@ -41,8 +41,8 @@ def _unique(items: list[str]) -> list[str]:
     return result
 
 
-def _repair_activity(activity: WorkshopActivity) -> WorkshopActivity:
-    return activity.model_copy(update={"estimatedMinutes": max(5, min(60, activity.estimatedMinutes))})
+def _repair_activity(activity: WorkshopActivity, max_minutes: int) -> WorkshopActivity:
+    return activity.model_copy(update={"estimatedMinutes": max(5, min(max_minutes, activity.estimatedMinutes))})
 
 
 def _repair_questions(questions: list[AssessmentQuestion]) -> list[AssessmentQuestion]:
