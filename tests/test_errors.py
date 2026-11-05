@@ -21,9 +21,14 @@ class ProviderMessageTests(unittest.TestCase):
         self.assertEqual(message, DEFAULT)
         self.assertNotIn("secret", message)
 
-    def test_only_quota_and_timeouts_are_retryable(self) -> None:
+    def test_overloaded_model_is_not_reported_as_missing(self) -> None:
+        message = provider_message("503 UNAVAILABLE: The model is overloaded. Please try again later.")
+        self.assertIn("saturado", message)
+
+    def test_only_fast_transient_errors_are_retryable(self) -> None:
         self.assertTrue(is_retryable(provider_message("429")))
-        self.assertTrue(is_retryable(provider_message("timed out")))
+        self.assertTrue(is_retryable(provider_message("503 overloaded")))
+        self.assertFalse(is_retryable(provider_message("timed out")))
         self.assertFalse(is_retryable(provider_message("401 unauthorized")))
 
 
