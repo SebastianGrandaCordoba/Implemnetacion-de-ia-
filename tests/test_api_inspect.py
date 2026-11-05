@@ -22,7 +22,10 @@ class InspectEndpointTests(unittest.TestCase):
             ("files", ("tema.txt", b"Fracciones\nDecimales", "text/plain")),
             ("files", ("clase.docx", docx(["Introducción"]), "application/octet-stream")),
         ]
-        body = self.client.post(URL, files=files, headers=headers()).json()
+        result = self.client.post(URL, files=files, headers=headers()).json()
+        self.assertTrue(result["fitsLimit"])
+        self.assertEqual(result["totalCharacters"], sum(item["characters"] for item in result["materials"]))
+        body = result["materials"]
         self.assertEqual([item["filename"] for item in body], ["tema.txt", "clase.docx"])
         self.assertEqual(body[0]["units"], {"Línea": 2})
         self.assertEqual(body[1]["units"], {"Sección": 1})

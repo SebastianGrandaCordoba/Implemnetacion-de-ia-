@@ -61,6 +61,7 @@ async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
         headers={"X-Request-ID": request_id} if request_id else None,
     )
 
+
 # Composition root: the HTTP adapter wires application ports to infrastructure.
 _startup_settings = get_settings()
 generate_workshop_use_case = GenerateWorkshop(
@@ -154,7 +155,7 @@ def limits() -> dict[str, object]:
 
 
 @app.post("/api/v1/materials/inspect", dependencies=[Depends(require_backend_token)])
-async def inspect_materials(files: list[UploadFile] = File(...)) -> list[dict[str, object]]:
+async def inspect_materials(files: list[UploadFile] = File(...)) -> dict[str, object]:
     """Shows what will be read from each file before spending a Gemini request."""
     settings = get_settings()
     try:
@@ -168,17 +169,23 @@ async def inspect_materials(files: list[UploadFile] = File(...)) -> list[dict[st
     finally:
         for upload in files:
             await upload.close()
-    return [
-        {
-            "filename": item.filename,
-            "characters": item.characters,
-            "words": item.words,
-            "units": item.units,
-            "estimatedTokens": item.estimated_tokens,
-            "preview": item.preview,
-        }
-        for item in stats
-    ]
+    total = sum(item.characters for item in stats)
+    return {
+        "totalCharacters": total,
+        "maxExtractedChars": settings.max_extracted_chars,
+        "fitsLimit": total <= settings.max_extracted_chars,
+        "materials": [
+            {
+                "filename": item.filename,
+                "characters": item.characters,
+                "words": item.words,
+                "units": item.units,
+                "estimatedTokens": item.estimated_tokens,
+                "preview": item.preview,
+            }
+            for item in stats
+        ],
+    }
 
 
 @app.post(
