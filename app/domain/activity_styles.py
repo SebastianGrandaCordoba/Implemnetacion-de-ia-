@@ -22,7 +22,7 @@ STYLES: dict[str, ActivityStyle] = {
                       "Ejercicios guiados en clase con ejemplos resueltos y práctica progresiva.", False),
         ActivityStyle("CODE", "Programar código",
                       "Al menos una actividad pide escribir código: indica el lenguaje que sugiere el material, "
-                      "da un esqueleto inicial breve (firma de funciones o clases) dentro de las instrucciones, "
+                      "da un esqueleto inicial breve (firma de funciones o clases) entre ``` y ``` dentro de las instrucciones, "
                       "describe entradas y salidas esperadas con dos o tres casos de prueba y pide como evidencia "
                       "el archivo o repositorio con el código y la salida de las pruebas.", True),
         ActivityStyle("APP", "Construir una aplicación",

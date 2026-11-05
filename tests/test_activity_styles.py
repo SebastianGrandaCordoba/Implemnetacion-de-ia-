@@ -25,6 +25,7 @@ class ActivityStyleTests(unittest.TestCase):
         text = style_rules(("CODE", "DEPLOY"))
         self.assertIn("Programar código", text)
         self.assertIn("URL pública", text)
+        self.assertIn("```", text)
         self.assertNotIn("Caso de estudio", text)
 
     def test_every_style_has_a_label_and_rules(self) -> None:
