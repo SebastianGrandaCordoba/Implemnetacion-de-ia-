@@ -1,5 +1,15 @@
 # Cambios
 
+## 1.4.0
+- Modo personalizado (`generationType=CUSTOM`): el docente describe el taller con sus palabras en `teacherPrompt`
+  (hasta 2000 caracteres) y el material pasa a ser opcional. Sin material, la referencia es "Indicaciones del docente".
+- En talleres y quizzes, `teacherPrompt` sirve como indicaciones adicionales del docente.
+- Talleres más completos: "Antes de empezar" para el estudiante, propósito, pistas graduadas y entregable por
+  actividad, notas solo para el docente y preguntas construidas a partir de errores frecuentes.
+- Cada tipo de solicitud tiene su forma: taller (3-4 actividades, 4-5 preguntas), quiz (5-8 preguntas) y
+  personalizado (lo que pida el docente, de 1 a 6 actividades).
+- Modelo por defecto `gemini-3.7-flash`, con `gemini-3.5-flash-lite` como respaldo si no está disponible.
+
 ## 1.3.0
 - Tipos de trabajo al crear un taller: ejercicios guiados, programar código, construir una aplicación,
   desplegar en internet, caso de estudio y proyecto en equipo (hasta tres a la vez).
