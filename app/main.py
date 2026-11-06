@@ -26,8 +26,10 @@ from app.domain.request_rules import (
     MAX_CONTEXT_CHARS,
     MAX_MATERIALS,
     MAX_OBJECTIVE_CHARS,
+    MAX_PROMPT_CHARS,
     InvalidRequest,
     check_material_count,
+    check_teacher_prompt,
     check_text_limits,
     normalize_activity_styles,
     normalize_generation_type,
@@ -150,6 +152,7 @@ def limits() -> dict[str, object]:
         "maxExtractedChars": settings.max_extracted_chars,
         "maxObjectiveChars": MAX_OBJECTIVE_CHARS,
         "maxContextChars": MAX_CONTEXT_CHARS,
+        "maxPromptChars": MAX_PROMPT_CHARS,
         "formats": [extension.lstrip(".") for extension in SUPPORTED_EXTENSIONS],
         "levels": ["LOW", "MEDIUM", "HIGH"],
         "generationTypes": sorted(GENERATION_TYPES),
@@ -205,6 +208,7 @@ async def create_workshop(
     learning_context: Annotated[str, Form(alias="learningContext")] = "",
     generation_type: Annotated[str, Form(alias="generationType")] = "WORKSHOP",
     activity_styles: Annotated[str, Form(alias="activityStyles", max_length=80)] = "",
+    teacher_prompt: Annotated[str, Form(alias="teacherPrompt", max_length=4000)] = "",
     file: UploadFile | None = File(default=None),
     files: list[UploadFile] | None = File(default=None),
     use_case: GenerateWorkshop = Depends(get_use_case),
@@ -215,6 +219,7 @@ async def create_workshop(
         kind = normalize_generation_type(generation_type)
         styles = normalize_activity_styles(activity_styles)
         check_text_limits(learning_objective, learning_context)
+        check_teacher_prompt(teacher_prompt, kind)
     except InvalidRequest as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -222,7 +227,7 @@ async def create_workshop(
         raise HTTPException(status_code=400, detail="Envía los materiales en un solo campo.")
     uploads = files if files else ([file] if file is not None else [])
     try:
-        check_material_count(len(uploads))
+        check_material_count(len(uploads), optional=kind == "CUSTOM")
     except InvalidRequest as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
@@ -231,8 +236,8 @@ async def create_workshop(
             use_case.execute,
             settings,
             WorkshopRequest(
-                filename=materials[0][0],
-                content=materials[0][1],
+                filename=materials[0][0] if materials else "",
+                content=materials[0][1] if materials else b"",
                 subject=subject.strip(),
                 target_level=level,
                 learning_objective=learning_objective.strip(),
@@ -240,6 +245,7 @@ async def create_workshop(
                 generation_type=kind,
                 activity_styles=styles,
                 additional_materials=tuple(materials[1:]),
+                teacher_prompt=teacher_prompt.strip(),
             ),
         )
     except InvalidRequest as exc:

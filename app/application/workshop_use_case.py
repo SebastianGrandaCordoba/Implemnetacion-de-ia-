@@ -24,6 +24,7 @@ class WorkshopRequest:
     generation_type: str = "WORKSHOP"
     additional_materials: tuple[tuple[str, bytes], ...] = ()
     activity_styles: tuple[str, ...] = ()
+    teacher_prompt: str = ""
 
 
 class GenerateWorkshop:
@@ -38,7 +39,8 @@ class GenerateWorkshop:
         self._generate = generate
 
     def execute(self, settings: Settings, request: WorkshopRequest) -> WorkshopResponse:
-        sources = ((request.filename, request.content), *request.additional_materials)
+        first = ((request.filename, request.content),) if request.filename else ()
+        sources = (*first, *request.additional_materials)
         extracted: list[str] = []
         remaining = settings.max_extracted_chars
         for index, (filename, content) in enumerate(sources, start=1):
@@ -61,4 +63,5 @@ class GenerateWorkshop:
             learning_context=request.learning_context,
             generation_type=request.generation_type,
             activity_styles=request.activity_styles,
+            teacher_prompt=request.teacher_prompt,
         )

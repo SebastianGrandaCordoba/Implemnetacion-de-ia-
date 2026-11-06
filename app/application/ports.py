@@ -26,4 +26,5 @@ class WorkshopGenerator(Protocol):
         learning_context: str,
         generation_type: str,
         activity_styles: tuple[str, ...] = (),
+        teacher_prompt: str = "",
     ) -> WorkshopResponse: ...
