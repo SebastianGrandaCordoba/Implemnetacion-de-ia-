@@ -12,7 +12,7 @@ from app.domain.prompt import (
 
 class LevelGuidanceTests(unittest.TestCase):
     def test_each_level_has_its_own_guidance(self) -> None:
-        self.assertIn("apoyo inicial", level_guidance("LOW"))
+        self.assertIn("ejemplo resuelto", level_guidance("LOW"))
         self.assertIn("práctica guiada", level_guidance(" medium "))
         self.assertIn("transferencia", level_guidance("high"))
 
@@ -49,8 +49,8 @@ class BuildPromptTests(unittest.TestCase):
 class AnswerKeyInstructionTests(unittest.TestCase):
     def test_prompt_matches_the_answer_key_rule(self) -> None:
         prompt = build_prompt(material_text="x", subject="M", target_level="LOW", learning_objective="")
-        self.assertIn("copiada textualmente de una de esas opciones", prompt)
-        self.assertIn("entre 2 y 5 opciones", prompt)
+        self.assertIn("copiada textualmente de una de las opciones", prompt)
+        self.assertIn("de 3 a 4 opciones", prompt)
 
 
 if __name__ == "__main__":

@@ -18,10 +18,10 @@ class RepairTests(unittest.TestCase):
         self.assertEqual(repair_workshop(original, MATERIAL), original)
 
     def test_extra_items_are_trimmed(self) -> None:
-        activities = [WorkshopActivity(title=f"A{i}", instructions="1.", estimatedMinutes=10) for i in range(7)]
+        activities = [WorkshopActivity(title=f"A{i}", instructions="1.", estimatedMinutes=10) for i in range(9)]
         objectives = [f"Objetivo {i}" for i in range(6)]
         repaired = repair_workshop(workshop(activities=activities, learningObjectives=objectives), MATERIAL)
-        self.assertEqual(len(repaired.activities), 5)
+        self.assertEqual(len(repaired.activities), 6)
         self.assertEqual(len(repaired.learningObjectives), 4)
 
     def test_minutes_are_clamped(self) -> None:

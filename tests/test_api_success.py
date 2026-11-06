@@ -28,5 +28,23 @@ class ActivityStyleRequestTests(ApiCase):
         self.assertRejected(self.post([txt()], activityStyles="DANCE"), 400, "no reconocido")
 
 
+class CustomRequestTests(ApiCase):
+    PROMPT = "Taller de 4 ejercicios de JOIN con una base de datos de una tienda de barrio"
+
+    def test_custom_requests_work_without_material(self) -> None:
+        response = self.post(None, generationType="CUSTOM", teacherPrompt=f"  {self.PROMPT}  ")
+        self.assertEqual(response.status_code, 200, response.text)
+        request = self.use_case.requests[0]
+        self.assertEqual(request.generation_type, "CUSTOM")
+        self.assertEqual(request.teacher_prompt, self.PROMPT)
+        self.assertEqual(request.filename, "")
+
+    def test_custom_requests_need_instructions(self) -> None:
+        self.assertRejected(self.post(None, generationType="CUSTOM", teacherPrompt="hola"), 400, "Describe")
+
+    def test_workshops_still_need_material(self) -> None:
+        self.assertRejected(self.post(None, teacherPrompt=self.PROMPT), 400, "materiales")
+
+
 if __name__ == "__main__":
     unittest.main()

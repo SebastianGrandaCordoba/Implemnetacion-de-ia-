@@ -9,13 +9,19 @@ class SettingsTests(unittest.TestCase):
     def test_defaults_are_safe(self) -> None:
         with mock.patch.dict(os.environ, {}, clear=True):
             settings = get_settings()
-        self.assertEqual(settings.gemini_model, "gemini-3.5-flash-lite")
+        self.assertEqual(settings.gemini_model, "gemini-3.7-flash")
+        self.assertEqual(settings.gemini_fallback_model, "gemini-3.5-flash-lite")
         self.assertEqual(settings.max_upload_bytes, 10 * 1024 * 1024)
         self.assertEqual(settings.ai_service_token, "")
 
-    def test_legacy_model_is_upgraded(self) -> None:
-        with mock.patch.dict(os.environ, {"GEMINI_MODEL": "gemini-3.8-flash"}, clear=True):
-            self.assertEqual(get_settings().gemini_model, "gemini-3.5-flash-lite")
+    def test_legacy_models_are_upgraded(self) -> None:
+        for legacy in ("gemini-3.8-flash", "gemini-3.5-flash-lite"):
+            with mock.patch.dict(os.environ, {"GEMINI_MODEL": legacy}, clear=True):
+                self.assertEqual(get_settings().gemini_model, "gemini-3.7-flash")
+
+    def test_other_models_are_respected(self) -> None:
+        with mock.patch.dict(os.environ, {"GEMINI_MODEL": "gemini-3.6-flash"}, clear=True):
+            self.assertEqual(get_settings().gemini_model, "gemini-3.6-flash")
 
     def test_limits_are_clamped(self) -> None:
         with mock.patch.dict(os.environ, {"MAX_EXTRACTED_CHARS": "999999", "GEMINI_TIMEOUT_MS": "10"}, clear=True):

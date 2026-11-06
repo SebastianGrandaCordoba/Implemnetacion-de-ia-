@@ -8,7 +8,7 @@ class FormValidationTests(ApiCase):
         self.assertRejected(self.post([txt()], targetLevel="EXPERTO"), 400, "LOW, MEDIUM o HIGH")
 
     def test_unknown_generation_type(self) -> None:
-        self.assertRejected(self.post([txt()], generationType="EXAM"), 400, "WORKSHOP o QUIZ")
+        self.assertRejected(self.post([txt()], generationType="EXAM"), 400, "WORKSHOP, QUIZ o CUSTOM")
 
     def test_objective_too_long(self) -> None:
         self.assertRejected(self.post([txt()], learningObjective="a" * 1001), 400, "1000")

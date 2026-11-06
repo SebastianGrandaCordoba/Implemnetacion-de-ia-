@@ -12,7 +12,7 @@ class HealthTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {"GEMINI_API_KEY": "k", "GEMINI_MODEL": "gemini-3.5-flash-lite"}, clear=True):
             body = TestClient(app).get("/health").json()
         self.assertEqual(body["status"], "ok")
-        self.assertEqual(body["model"], "gemini-3.5-flash-lite")
+        self.assertEqual(body["model"], "gemini-3.7-flash")
         self.assertEqual(body["generationConfigured"], "true")
 
     def test_health_reports_version_and_uptime(self) -> None:

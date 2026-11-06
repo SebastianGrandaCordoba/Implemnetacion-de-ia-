@@ -17,7 +17,7 @@ class LimitsTests(unittest.TestCase):
         body = self.client.get("/api/v1/limits", headers=headers()).json()
         self.assertEqual(body["maxMaterials"], 6)
         self.assertEqual(body["formats"], ["pdf", "docx", "txt"])
-        self.assertEqual(body["generationTypes"], ["QUIZ", "WORKSHOP"])
+        self.assertEqual(body["generationTypes"], ["CUSTOM", "QUIZ", "WORKSHOP"])
 
 
 if __name__ == "__main__":
