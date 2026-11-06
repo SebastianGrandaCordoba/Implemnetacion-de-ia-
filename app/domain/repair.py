@@ -11,10 +11,12 @@ import re
 from app.domain.validation import LABEL, NO_LABELS, _cites, _plain
 from app.schemas import AssessmentQuestion, WorkshopActivity, WorkshopResponse
 
-MAX_ACTIVITIES = 5
-MAX_QUESTIONS = 5
+MAX_ACTIVITIES = 6
+MAX_QUESTIONS = 9
 MAX_OBJECTIVES = 4
 MAX_OPTIONS = 5
+MAX_HINTS = 3
+MAX_TEACHER_NOTES = 5
 _LETTER = re.compile(r"^\(?([a-e])[).:]?$", flags=re.IGNORECASE)
 
 
@@ -27,6 +29,8 @@ def repair_workshop(workshop: WorkshopResponse, material_text: str, max_minutes:
             "activities": [_repair_activity(a, max_minutes) for a in workshop.activities][:MAX_ACTIVITIES],
             "assessment": _repair_questions(workshop.assessment)[:MAX_QUESTIONS],
             "sourceReferences": _repair_references(workshop.sourceReferences, material_text),
+            "teacherNotes": _unique([n.strip() for n in workshop.teacherNotes if n.strip()])[:MAX_TEACHER_NOTES],
+            "studentIntro": workshop.studentIntro.strip(),
         }
     )
 
@@ -42,7 +46,12 @@ def _unique(items: list[str]) -> list[str]:
 
 
 def _repair_activity(activity: WorkshopActivity, max_minutes: int) -> WorkshopActivity:
-    return activity.model_copy(update={"estimatedMinutes": max(5, min(max_minutes, activity.estimatedMinutes))})
+    return activity.model_copy(update={
+        "estimatedMinutes": max(5, min(max_minutes, activity.estimatedMinutes)),
+        "hints": _unique([h.strip() for h in activity.hints if h.strip()])[:MAX_HINTS],
+        "goal": activity.goal.strip(),
+        "deliverable": activity.deliverable.strip(),
+    })
 
 
 def _repair_questions(questions: list[AssessmentQuestion]) -> list[AssessmentQuestion]:
@@ -84,6 +93,10 @@ def _answer_listed(answer: str, options: list[str]) -> bool:
 
 def _repair_references(references: list[str], material_text: str) -> list[str]:
     cleaned = _unique([r.strip() for r in references if r.strip()])
+    if not material_text.strip():
+        from app.domain.prompt import NO_MATERIAL_REFERENCE
+
+        return [NO_MATERIAL_REFERENCE]
     labels = set(LABEL.findall(material_text))
     if not labels:
         return [NO_LABELS.capitalize()]

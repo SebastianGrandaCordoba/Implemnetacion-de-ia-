@@ -20,30 +20,33 @@ class InvalidWorkshop(ValueError):
 
 
 def validate_workshop(
-    workshop: WorkshopResponse, material_text: str, rules: list[Rule] | None = None, max_minutes: int = 60
+    workshop: WorkshopResponse, material_text: str, rules: list[Rule] | None = None, max_minutes: int = 60,
+    generation_type: str = "WORKSHOP",
 ) -> WorkshopResponse:
     if rules is None:
-        rules = [activity_minutes_up_to(max_minutes) if rule is activity_minutes else rule for rule in RULES]
+        rules = rules_for(generation_type, max_minutes)
     for rule in rules:
         problem = rule(workshop, material_text)
         if problem:
             raise InvalidWorkshop(problem)
     return workshop
 
-def activity_count(workshop: WorkshopResponse, _material: str) -> str | None:
-    if not 3 <= len(workshop.activities) <= 5:
-        return "El taller no cumple la cantidad esperada de actividades."
-    return None
+def _between(low: int, high: int, field: str, message: str) -> Rule:
+    def rule(workshop: WorkshopResponse, _material: str) -> str | None:
+        return None if low <= len(getattr(workshop, field)) <= high else message
 
-def question_count(workshop: WorkshopResponse, _material: str) -> str | None:
-    if not 3 <= len(workshop.assessment) <= 5:
-        return "El taller no cumple la cantidad esperada de preguntas."
-    return None
+    rule.__name__ = f"{field}_between_{low}_{high}"
+    return rule
 
-def objective_count(workshop: WorkshopResponse, _material: str) -> str | None:
-    if not 2 <= len(workshop.learningObjectives) <= 4:
-        return "El taller no cumple la cantidad esperada de objetivos."
-    return None
+
+ACTIVITIES_MESSAGE = "El taller no cumple la cantidad esperada de actividades."
+QUESTIONS_MESSAGE = "El taller no cumple la cantidad esperada de preguntas."
+OBJECTIVES_MESSAGE = "El taller no cumple la cantidad esperada de objetivos."
+
+# Defaults kept for the classic workshop; rules_for() tightens or loosens them per request type.
+activity_count = _between(3, 5, "activities", ACTIVITIES_MESSAGE)
+question_count = _between(3, 5, "assessment", QUESTIONS_MESSAGE)
+objective_count = _between(2, 4, "learningObjectives", OBJECTIVES_MESSAGE)
 
 def activity_minutes_up_to(limit: int) -> Rule:
     """Each activity lasts between 5 minutes and `limit` (60 for class work, 120 for code or projects)."""
@@ -111,6 +114,8 @@ def _cites(reference: str, label: str, number: str) -> bool:
 
 def verifiable_references(workshop: WorkshopResponse, material: str) -> str | None:
     """Every citation must point to a label that exists in the extracted material."""
+    if not material.strip():
+        return None  # Written from the teacher's prompt: there is nothing to cite.
     labels = set(LABEL.findall(material))
     for reference in workshop.sourceReferences:
         if labels:
@@ -133,3 +138,22 @@ RULES: list[Rule] = [
     distinct_questions,
 ]
 
+
+
+def rules_for(generation_type: str, max_minutes: int = 60) -> list[Rule]:
+    """The same rules for every request, with the counts each kind of request asks for."""
+    from app.domain.prompt import shape_for
+
+    shape = shape_for(generation_type)
+    # One item more (or one question less) is tolerated: a usable workshop beats another 30 s wait.
+    counts = {
+        activity_count: _between(shape.activities[0], shape.activities[1] + 1, "activities", ACTIVITIES_MESSAGE),
+        question_count: _between(
+            max(0, shape.questions[0] - 1), shape.questions[1] + 1, "assessment", QUESTIONS_MESSAGE
+        ),
+        objective_count: _between(
+            shape.objectives[0], shape.objectives[1] + 1, "learningObjectives", OBJECTIVES_MESSAGE
+        ),
+        activity_minutes: activity_minutes_up_to(max_minutes),
+    }
+    return [counts.get(rule, rule) for rule in RULES]
