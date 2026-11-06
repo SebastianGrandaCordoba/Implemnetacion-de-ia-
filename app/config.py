@@ -18,6 +18,7 @@ class Settings:
     cache_entries: int = 32
     generations_per_minute: int = 12
     gemini_thinking_level: str = "LOW"
+    gemini_fallback_model: str = "gemini-3.5-flash-lite"
 
 
 def _int(name: str, default: int, low: int, high: int) -> int:
@@ -29,6 +30,10 @@ def _int(name: str, default: int, low: int, high: int) -> int:
     return max(low, min(high, value))
 
 
+QUALITY_MODEL = "gemini-3.7-flash"
+LEGACY_MODELS = frozenset({"gemini-3.8-flash", "gemini-3.5-flash-lite"})
+
+
 def _thinking_level(raw: str) -> str:
     """MINIMAL, LOW, MEDIUM or HIGH; OFF (or empty) leaves the model's default."""
     level = raw.strip().upper()
@@ -36,11 +41,12 @@ def _thinking_level(raw: str) -> str:
 
 
 def get_settings() -> Settings:
-    configured_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
-    # Render can keep the old blueprint variable after a code deploy. Prefer the
-    # faster current model when that legacy value is still present.
-    if configured_model == "gemini-3.8-flash":
-        configured_model = "gemini-3.5-flash-lite"
+    configured_model = os.getenv("GEMINI_MODEL", QUALITY_MODEL).strip()
+    # Render keeps old blueprint values after a code deploy: 3.8 Flash is a Live (voice) model and the
+    # lite model wrote thin workshops, so both move to the current Flash model. The lite one stays as
+    # the fallback when Flash is unavailable.
+    if configured_model in LEGACY_MODELS:
+        configured_model = QUALITY_MODEL
     return Settings(
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         gemini_model=configured_model,
@@ -52,4 +58,5 @@ def get_settings() -> Settings:
         cache_entries=_int("GENERATION_CACHE_ENTRIES", 32, 0, 256),
         generations_per_minute=_int("GENERATIONS_PER_MINUTE", 12, 0, 120),
         gemini_thinking_level=_thinking_level(os.getenv("GEMINI_THINKING_LEVEL", "LOW")),
+        gemini_fallback_model=os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip(),
     )
