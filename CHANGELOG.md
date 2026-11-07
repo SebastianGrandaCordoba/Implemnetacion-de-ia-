@@ -1,5 +1,9 @@
 # Cambios
 
+## 1.5.0
+- `POST /generate-rubric`: rúbrica analítica (3 a 6 criterios, pesos que suman 100 y cuatro niveles:
+  Excelente, Bueno, Básico, Insuficiente) a partir de la descripción de una actividad o de un taller generado.
+
 ## 1.4.0
 - Modo personalizado (`generationType=CUSTOM`): el docente describe el taller con sus palabras en `teacherPrompt`
   (hasta 2000 caracteres) y el material pasa a ser opcional. Sin material, la referencia es "Indicaciones del docente".
