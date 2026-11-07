@@ -36,9 +36,11 @@ from app.domain.request_rules import (
     normalize_level,
     safe_filename,
 )
+from app.domain.rubric import RubricRequest, RubricResponse
 from app.gemini_service import (
     GeminiConfigurationError,
     GeminiGenerationError,
+    generate_rubric,
 )
 from app.schemas import WorkshopResponse
 
@@ -48,7 +50,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FairTeam AI Service",
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
-    version="1.4.0",
+    version="1.5.0",
 )
 
 app.add_middleware(RequestContextMiddleware)
@@ -99,6 +101,21 @@ def limit_generations() -> None:
 def get_use_case() -> GenerateWorkshop:
     """FastAPI dependency so tests can swap the composition root."""
     return generate_workshop_use_case
+
+
+def get_rubric_generator():
+    """FastAPI dependency so tests can replace the model call."""
+    settings = get_settings()
+
+    def generate(request: RubricRequest) -> RubricResponse:
+        # A second attempt fixes most rubrics the validator rejects (missing level, weights off).
+        try:
+            return generate_rubric(settings, request)
+        except GeminiGenerationError as first:
+            logger.info("Retrying rubric generation: %s", first)
+            return generate_rubric(settings, request)
+
+    return generate
 
 
 def require_backend_token(
@@ -260,3 +277,21 @@ async def create_workshop(
     finally:
         for upload in uploads:
             await upload.close()
+
+
+@app.post(
+    "/generate-rubric",
+    response_model=RubricResponse,
+    dependencies=[Depends(require_backend_token), Depends(limit_generations)],
+)
+async def generate_rubric_endpoint(
+    request: RubricRequest, generator=Depends(get_rubric_generator)
+) -> RubricResponse:
+    """Analytic rubric (3–6 criteria × Excelente/Bueno/Básico/Insuficiente) for an activity."""
+    try:
+        return await run_in_threadpool(generator, request)
+    except GeminiConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except GeminiGenerationError as exc:
+        logger.warning("Rubric generation failed: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
