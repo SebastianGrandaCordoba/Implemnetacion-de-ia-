@@ -10,6 +10,14 @@ from app.domain.errors import provider_message
 from app.domain.finalize import finalize_workshop
 from app.domain.prompt import build_prompt, is_custom, is_quiz
 from app.domain.repair import repair_workshop
+from app.domain.rubric import (
+    InvalidRubric,
+    RubricRequest,
+    RubricResponse,
+    build_rubric_prompt,
+    repair_rubric,
+    validate_rubric,
+)
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 
@@ -35,10 +43,12 @@ def create_client(settings: Settings) -> genai.Client:
     )
 
 
-def generation_config(settings: Settings, *, thinking: bool = True) -> types.GenerateContentConfig:
+def generation_config(
+    settings: Settings, *, thinking: bool = True, schema=WorkshopResponse
+) -> types.GenerateContentConfig:
     config = {
         "response_mime_type": "application/json",
-        "response_schema": WorkshopResponse,
+        "response_schema": schema,
         "max_output_tokens": MAX_OUTPUT_TOKENS,
     }
     if thinking and settings.gemini_thinking_level:
@@ -47,16 +57,18 @@ def generation_config(settings: Settings, *, thinking: bool = True) -> types.Gen
     return types.GenerateContentConfig(**config)
 
 
-def _generate_with(client, settings: Settings, model: str, prompt: str):
+def _generate_with(client, settings: Settings, model: str, prompt: str, schema=WorkshopResponse):
     try:
-        return client.models.generate_content(model=model, contents=prompt, config=generation_config(settings))
+        return client.models.generate_content(
+            model=model, contents=prompt, config=generation_config(settings, schema=schema)
+        )
     except Exception as exc:
         if "thinking" not in str(exc).lower():
             raise
         # Some models reject a thinking level; fall back to their default instead of failing.
         logger.warning("Model %s rejected thinking level; retrying without it", model)
         return client.models.generate_content(
-            model=model, contents=prompt, config=generation_config(settings, thinking=False)
+            model=model, contents=prompt, config=generation_config(settings, thinking=False, schema=schema)
         )
 
 
@@ -65,16 +77,16 @@ def _unavailable(exc: Exception) -> bool:
     return any(word in text for word in ("not found", "404", "unavailable", "503", "overloaded", "not supported"))
 
 
-def _generate(client, settings: Settings, prompt: str):
+def _generate(client, settings: Settings, prompt: str, schema=WorkshopResponse):
     """Uses the quality model and falls back to the fast one when it is missing or overloaded."""
     try:
-        return _generate_with(client, settings, settings.gemini_model, prompt)
+        return _generate_with(client, settings, settings.gemini_model, prompt, schema)
     except Exception as exc:
         fallback = settings.gemini_fallback_model
         if not fallback or fallback == settings.gemini_model or not _unavailable(exc):
             raise
         logger.warning("Model %s unavailable; using %s", settings.gemini_model, fallback)
-        return _generate_with(client, settings, fallback, prompt)
+        return _generate_with(client, settings, fallback, prompt, schema)
 
 
 def generate_workshop(
@@ -127,3 +139,24 @@ def generate_workshop(
         # metadata. Return only actionable, non-sensitive categories to the UI.
         message = provider_message(str(exc))
         raise GeminiGenerationError(message) from exc
+
+
+def generate_rubric(settings: Settings, request: RubricRequest) -> RubricResponse:
+    """An analytic rubric (criteria x four levels) for an activity the teacher describes."""
+    if not settings.gemini_api_key:
+        raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
+    started = monotonic()
+    try:
+        response = _generate(create_client(settings), settings, build_rubric_prompt(request), RubricResponse)
+        if not response.text:
+            raise GeminiGenerationError("El modelo no devolvió contenido.")
+        rubric = repair_rubric(RubricResponse.model_validate_json(response.text), request.criteriaCount)
+        try:
+            return validate_rubric(rubric)
+        except InvalidRubric as invalid:
+            raise GeminiGenerationError(str(invalid)) from invalid
+    except GeminiGenerationError:
+        raise
+    except Exception as exc:
+        logger.exception("Gemini rubric generation failed after %.2fs", monotonic() - started)
+        raise GeminiGenerationError(provider_message(str(exc))) from exc
