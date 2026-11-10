@@ -1,5 +1,13 @@
 # Cambios
 
+## 1.7.0
+- `POST /assistant/interpret`: el intérprete de Búho. Lee un pedido libre del docente con la conversación previa
+  y el contexto del curso, y devuelve una sola acción (crear taller, quiz o actividad a la medida, crear rúbrica
+  de una actividad guardada, escribir a un estudiante, abrir una sección, responder una duda pedagógica…).
+- Estudiantes, actividades y cursos llegan como códigos (E3, A2, C1); el servicio descarta códigos inventados.
+- Responde primero el modelo rápido (12 s) y, si falla, el de calidad (15 s).
+- La rúbrica solo se reintenta si el segundo intento cabe en la espera del backend.
+
 ## 1.6.0
 - Talleres y quizzes también sin material: se escriben a partir del tema u objetivo del docente.
 - Tipos de trabajo para todas las áreas: resolución de problemas, laboratorio, análisis de fuentes, ensayo o
