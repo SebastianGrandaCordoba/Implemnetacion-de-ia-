@@ -6,6 +6,7 @@ from google.genai import types
 
 from app.config import Settings
 from app.domain.activity_styles import CLASS_MINUTES, EXTENDED_MINUTES, max_minutes
+from app.domain.assistant import Interpretation, InterpretRequest, build_interpret_prompt, clean_interpretation
 from app.domain.errors import provider_message
 from app.domain.finalize import finalize_workshop
 from app.domain.prompt import build_prompt, is_custom, is_quiz
@@ -40,6 +41,9 @@ MAX_OUTPUT_TOKENS = 8192
 # 85 s budget. Gemini's own SDK retries are off: a silent retry turned a 30 s wait into 58 s and a failure.
 PRIMARY_TIMEOUT_MS = 32_000
 FALLBACK_TIMEOUT_MS = 40_000
+# Búho waits for the interpreter while the teacher looks at "pensando…": the fast model goes first.
+INTERPRET_FAST_TIMEOUT_MS = 12_000
+INTERPRET_QUALITY_TIMEOUT_MS = 15_000
 
 
 def create_client(settings: Settings, timeout_ms: int | None = None) -> genai.Client:
@@ -177,3 +181,27 @@ def generate_rubric(settings: Settings, request: RubricRequest) -> RubricRespons
     except Exception as exc:
         logger.exception("Gemini rubric generation failed after %.2fs", monotonic() - started)
         raise GeminiGenerationError(provider_message(str(exc))) from exc
+
+
+def interpret_request(settings: Settings, request: InterpretRequest, client=None) -> Interpretation:
+    """Búho's interpreter: the fast model reads the request first; the quality model only if that one fails."""
+    if not settings.gemini_api_key:
+        raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
+    prompt = build_interpret_prompt(request)
+    models = [m for m in dict.fromkeys([settings.gemini_fallback_model, settings.gemini_model]) if m]
+    timeouts = [INTERPRET_FAST_TIMEOUT_MS, INTERPRET_QUALITY_TIMEOUT_MS]
+    started = monotonic()
+    last: Exception | None = None
+    for index, model in enumerate(models):
+        try:
+            active = client if client is not None else create_client(settings, timeouts[min(index, 1)])
+            response = _generate_with(active, settings, model, prompt, Interpretation)
+            if not response.text:
+                raise GeminiGenerationError("El modelo no devolvió contenido.")
+            return clean_interpretation(Interpretation.model_validate_json(response.text), request)
+        except Exception as exc:  # noqa: BLE001 - any failure moves on to the next model
+            if _credentials(exc):
+                break
+            last = exc
+            logger.warning("Interpreter model %s failed after %.1fs: %s", model, monotonic() - started, str(exc)[:160])
+    raise GeminiGenerationError(provider_message(str(last)) if last else "No se pudo interpretar el pedido.")

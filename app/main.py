@@ -20,6 +20,7 @@ from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
 from app.config import get_settings
 from app.document_parser import SUPPORTED_EXTENSIONS, MaterialError
 from app.domain.activity_styles import STYLES
+from app.domain.assistant import Interpretation, InterpretRequest
 from app.domain.rate_limit import SlidingWindowLimiter
 from app.domain.request_rules import (
     GENERATION_TYPES,
@@ -41,6 +42,7 @@ from app.gemini_service import (
     GeminiConfigurationError,
     GeminiGenerationError,
     generate_rubric,
+    interpret_request,
 )
 from app.schemas import WorkshopResponse
 
@@ -50,7 +52,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FairTeam AI Service",
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
-    version="1.6.0",
+    version="1.7.0",
 )
 
 app.add_middleware(RequestContextMiddleware)
@@ -288,6 +290,24 @@ async def create_workshop(
     finally:
         for upload in uploads:
             await upload.close()
+
+
+def get_interpreter():
+    """FastAPI dependency so tests can replace the model call."""
+    settings = get_settings()
+    return lambda request: interpret_request(settings, request)
+
+
+@app.post("/assistant/interpret", response_model=Interpretation, dependencies=[Depends(require_backend_token)])
+async def interpret_endpoint(request: InterpretRequest, interpreter=Depends(get_interpreter)) -> Interpretation:
+    """Búho: the one action that best fulfils a teacher's free request, with codes instead of names."""
+    try:
+        return await run_in_threadpool(interpreter, request)
+    except GeminiConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except GeminiGenerationError as exc:
+        logger.warning("Interpretation failed: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post(
