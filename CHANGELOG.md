@@ -1,6 +1,9 @@
 # Cambios
 
 ## 1.6.0
+- Tipos de trabajo para todas las áreas: resolución de problemas, laboratorio, análisis de fuentes, ensayo o
+  debate, comprensión de lectura, producción escrita y expresión oral. El prompt no pide programar salvo que la
+  materia o el docente lo pidan.
 - Libros completos: si el material supera el límite, se envían las páginas más relacionadas con el tema pedido
   (en su orden original, con sus números de página) en lugar de rechazar el archivo. Se leen hasta 600 páginas.
 - Varios materiales reparten el presupuesto de texto en partes justas.

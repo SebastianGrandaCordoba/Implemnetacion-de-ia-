@@ -159,6 +159,9 @@ Cómo escribir:
   “investiga el tema”, “analiza la información” o “refuerza conocimientos”.
 - Todo debe poder hacerse sin preguntarle nada al docente: da los datos, el enunciado completo, el código inicial o el
   caso que se necesita. Si hay código, ponlo entre ``` y ```.
+- Ajusta las actividades a la naturaleza de la materia: problemas con procedimiento en matemáticas, experimentos en
+  ciencias, fuentes y argumentación en humanidades, lectura, escritura y habla en idiomas. No pidas programar, crear
+  apps ni usar herramientas digitales salvo que la materia, el tipo de trabajo o el docente lo pidan.
 - {guidance}
 
 {structure} La dificultad debe avanzar entre actividades y cada una debe trabajar una destreza distinta.
