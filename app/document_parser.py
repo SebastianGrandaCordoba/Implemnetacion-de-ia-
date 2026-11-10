@@ -5,12 +5,17 @@ from pathlib import Path
 from docx import Document
 from pypdf import PdfReader
 
+from app.domain.excerpt import select_excerpt
+
+# A long textbook takes minutes to read whole; past this many pages the rest is skipped.
+MAX_PDF_PAGES = 600
+
 
 class MaterialError(ValueError):
     pass
 
 
-def extract_text(filename: str, raw: bytes, max_chars: int) -> str:
+def extract_text(filename: str, raw: bytes, max_chars: int, focus: str = "") -> str:
     extractor = EXTRACTORS.get(Path(filename).suffix.lower())
     if extractor is None:
         raise MaterialError("Formatos permitidos: PDF, DOCX y TXT.")
@@ -26,11 +31,8 @@ def extract_text(filename: str, raw: bytes, max_chars: int) -> str:
         raise MaterialError(
             "No se encontró texto legible. Los PDF escaneados necesitan OCR antes de subirlos."
         )
-    if len(text) > max_chars:
-        raise MaterialError(
-            f"El documento supera el máximo de {max_chars:,} caracteres extraídos. Sube un capítulo más corto."
-        )
-    return text
+    # Long documents (a whole textbook) are not rejected: the pages about the requested topic are kept.
+    return select_excerpt(text, focus, max_chars)
 
 
 def normalize(text: str) -> str:
@@ -42,6 +44,8 @@ def _extract_pdf(raw: bytes) -> str:
     reader = PdfReader(BytesIO(raw), strict=False)
     pages = []
     for page_number, page in enumerate(reader.pages, start=1):
+        if page_number > MAX_PDF_PAGES:
+            break
         page_text = page.extract_text() or ""
         if page_text.strip():
             pages.append(f"[Página {page_number}]\n{page_text}")

@@ -22,8 +22,8 @@ class ParserErrorTests(unittest.TestCase):
     def test_whitespace_only_text_is_empty(self) -> None:
         self.assertMaterialError("OCR", "vacio.txt", txt(" ", "\t"))
 
-    def test_long_documents_ask_for_a_shorter_chapter(self) -> None:
-        self.assertMaterialError("capítulo más corto", "libro.txt", txt("a" * 200), max_chars=50)
+    def test_long_documents_are_trimmed_instead_of_rejected(self) -> None:
+        self.assertLessEqual(len(extract_text("libro.txt", txt("a" * 2000), 1500)), 1500)
 
     def test_invalid_utf8_is_reported_as_unreadable(self) -> None:
         self.assertMaterialError("dañado", "notas.txt", b"\xff\xfe\xfa")

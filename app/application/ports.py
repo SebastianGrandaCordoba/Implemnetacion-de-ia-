@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class MaterialTextExtractor(Protocol):
-    def __call__(self, filename: str, raw: bytes, max_chars: int) -> str: ...
+    def __call__(self, filename: str, raw: bytes, max_chars: int, focus: str = "") -> str: ...
 
 
 class WorkshopGenerator(Protocol):

@@ -25,7 +25,7 @@ class GenerateWorkshopTests(unittest.TestCase):
             sourceReferences=["Página 1"],
         )
 
-        def extract(filename: str, raw: bytes, max_chars: int) -> str:
+        def extract(filename: str, raw: bytes, max_chars: int, focus: str = "") -> str:
             calls.append(("extract", filename, raw, max_chars))
             return "[Página 1] Variables"
 

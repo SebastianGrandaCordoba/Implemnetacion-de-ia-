@@ -43,13 +43,17 @@ class GenerateWorkshop:
         sources = (*first, *request.additional_materials)
         extracted: list[str] = []
         remaining = settings.max_extracted_chars
+        # What the teacher asked for decides which pages of a long book are kept.
+        focus = " ".join((request.learning_objective, request.teacher_prompt, request.learning_context))
         for index, (filename, content) in enumerate(sources, start=1):
             if remaining < 500:
                 raise MaterialError(
                     "Los materiales seleccionados juntos contienen demasiado texto. "
                     "Selecciona menos archivos o archivos más breves."
                 )
-            text = self._extract_material(filename, content, remaining)
+            # Each material gets a fair share of what is left, so the first one cannot crowd out the rest.
+            share = remaining // (len(sources) - index + 1)
+            text = self._extract_material(filename, content, share, focus)
             labeled_text = f"[Material {index}: {filename}]\n{text}"
             extracted.append(labeled_text)
             remaining -= len(labeled_text)

@@ -1,7 +1,6 @@
 import unittest
 
 from app.application.workshop_use_case import GenerateWorkshop, WorkshopRequest
-from app.document_parser import MaterialError
 from app.schemas import WorkshopResponse
 
 
@@ -19,7 +18,7 @@ class MultipleMaterialsTests(unittest.TestCase):
         budgets: list[int] = []
         seen: dict = {}
 
-        def extract(filename: str, raw: bytes, max_chars: int) -> str:
+        def extract(filename: str, raw: bytes, max_chars: int, focus: str = "") -> str:
             budgets.append(max_chars)
             return raw.decode() * 10
 
@@ -29,16 +28,34 @@ class MultipleMaterialsTests(unittest.TestCase):
 
         GenerateWorkshop(extract, generate).execute(Settings(), WorkshopRequest(
             "a.txt", b"uno ", "Física", "LOW", "", additional_materials=(("b.txt", b"dos "),)))
-        self.assertEqual(budgets[0], 1200)
+        self.assertEqual(budgets[0], 600)
         self.assertLess(budgets[1], 1200)
         self.assertIn("[Material 1: a.txt]", seen["material_text"])
         self.assertIn("[Material 2: b.txt]", seen["material_text"])
 
-    def test_stops_when_materials_exhaust_the_budget(self) -> None:
-        use_case = GenerateWorkshop(lambda name, raw, max_chars: "x" * (max_chars - 100), lambda *_a, **_k: response())
-        with self.assertRaisesRegex(MaterialError, "demasiado texto"):
-            request = WorkshopRequest("a.txt", b"1", "F", "LOW", "", additional_materials=(("b.txt", b"2"),))
-            use_case.execute(Settings(), request)
+    def test_the_first_long_material_does_not_crowd_out_the_others(self) -> None:
+        seen: dict = {}
+
+        def generate(_settings, **kwargs):
+            seen.update(kwargs)
+            return response()
+
+        use_case = GenerateWorkshop(lambda name, raw, max_chars, focus="": "x" * (max_chars - 100), generate)
+        request = WorkshopRequest("a.txt", b"1", "F", "LOW", "", additional_materials=(("b.txt", b"2"),))
+        use_case.execute(Settings(), request)
+        self.assertIn("[Material 2: b.txt]", seen["material_text"])
+
+    def test_the_request_decides_which_pages_matter(self) -> None:
+        focuses: list[str] = []
+
+        def extract(name, raw, max_chars, focus=""):
+            focuses.append(focus)
+            return "[Página 1] texto"
+
+        request = WorkshopRequest("a.pdf", b"1", "Álgebra", "LOW", "Gauss", teacher_prompt="determinantes")
+        GenerateWorkshop(extract, lambda *_a, **_k: response()).execute(Settings(), request)
+        self.assertIn("Gauss", focuses[0])
+        self.assertIn("determinantes", focuses[0])
 
 
 if __name__ == "__main__":
