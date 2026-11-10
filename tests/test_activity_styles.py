@@ -35,3 +35,12 @@ class ActivityStyleTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AreaStylesTests(unittest.TestCase):
+    def test_every_area_has_its_own_kinds_of_work(self) -> None:
+        from app.domain.activity_styles import STYLES
+        for style in ("PROBLEMS", "LAB", "SOURCES", "ESSAY", "READING", "WRITING", "ORAL"):
+            self.assertIn(style, STYLES)
+        self.assertTrue(STYLES["LAB"].extended)
+        self.assertFalse(STYLES["PROBLEMS"].extended)
