@@ -103,18 +103,22 @@ def get_use_case() -> GenerateWorkshop:
     return generate_workshop_use_case
 
 
+RUBRIC_RETRY_WINDOW_S = 8
+
+
 def get_rubric_generator():
     """FastAPI dependency so tests can replace the model call."""
     settings = get_settings()
 
     def generate(request: RubricRequest) -> RubricResponse:
         # A second attempt fixes most rubrics the validator rejects (missing level, weights off), but only
-        # when the first one failed fast: the backend stops waiting at 85 s.
+        # when the first one failed fast. A retry can take up to 72 s (32 s + 40 s), and the backend stops
+        # waiting at 85 s, so only a failure in the first few seconds leaves room for it.
         started = monotonic()
         try:
             return generate_rubric(settings, request)
         except GeminiGenerationError as first:
-            if monotonic() - started > 20:
+            if monotonic() - started > RUBRIC_RETRY_WINDOW_S:
                 raise
             logger.info("Retrying rubric generation: %s", first)
             return generate_rubric(settings, request)
