@@ -1,5 +1,12 @@
 # Cambios
 
+## 1.6.0
+- Libros completos: si el material supera el límite, se envían las páginas más relacionadas con el tema pedido
+  (en su orden original, con sus números de página) en lugar de rechazar el archivo. Se leen hasta 600 páginas.
+- Varios materiales reparten el presupuesto de texto en partes justas.
+- Gemini: el modelo de calidad tiene 32 s; si tarda, está saturado o falla, responde el modelo rápido (40 s).
+  Los reintentos internos del SDK están apagados para no pasar del tiempo del backend.
+
 ## 1.5.0
 - `POST /generate-rubric`: rúbrica analítica (3 a 6 criterios, pesos que suman 100 y cuatro niveles:
   Excelente, Bueno, Básico, Insuficiente) a partir de la descripción de una actividad o de un taller generado.
