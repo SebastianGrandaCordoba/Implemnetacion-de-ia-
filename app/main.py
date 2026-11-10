@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FairTeam AI Service",
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
-    version="1.5.0",
+    version="1.6.0",
 )
 
 app.add_middleware(RequestContextMiddleware)
@@ -108,10 +108,14 @@ def get_rubric_generator():
     settings = get_settings()
 
     def generate(request: RubricRequest) -> RubricResponse:
-        # A second attempt fixes most rubrics the validator rejects (missing level, weights off).
+        # A second attempt fixes most rubrics the validator rejects (missing level, weights off), but only
+        # when the first one failed fast: the backend stops waiting at 85 s.
+        started = monotonic()
         try:
             return generate_rubric(settings, request)
         except GeminiGenerationError as first:
+            if monotonic() - started > 20:
+                raise
             logger.info("Retrying rubric generation: %s", first)
             return generate_rubric(settings, request)
 
