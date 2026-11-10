@@ -36,10 +36,19 @@ class GeminiGenerationError(RuntimeError):
 MAX_OUTPUT_TOKENS = 8192
 
 
-def create_client(settings: Settings) -> genai.Client:
+# The quality model gets this long before the fast one takes over; both together stay under the backend's
+# 85 s budget. Gemini's own SDK retries are off: a silent retry turned a 30 s wait into 58 s and a failure.
+PRIMARY_TIMEOUT_MS = 32_000
+FALLBACK_TIMEOUT_MS = 40_000
+
+
+def create_client(settings: Settings, timeout_ms: int | None = None) -> genai.Client:
     return genai.Client(
         api_key=settings.gemini_api_key,
-        http_options=types.HttpOptions(timeout=settings.gemini_timeout_ms),
+        http_options=types.HttpOptions(
+            timeout=timeout_ms or settings.gemini_timeout_ms,
+            retry_options=types.HttpRetryOptions(attempts=1),
+        ),
     )
 
 
@@ -72,21 +81,29 @@ def _generate_with(client, settings: Settings, model: str, prompt: str, schema=W
         )
 
 
-def _unavailable(exc: Exception) -> bool:
+def _credentials(exc: Exception) -> bool:
     text = str(exc).lower()
-    return any(word in text for word in ("not found", "404", "unavailable", "503", "overloaded", "not supported"))
+    return any(word in text for word in ("api key", "api_key", "permission_denied", "unauthorized", "401", "403"))
 
 
 def _generate(client, settings: Settings, prompt: str, schema=WorkshopResponse):
-    """Uses the quality model and falls back to the fast one when it is missing or overloaded."""
+    """Quality model first, with a short deadline; anything but a bad key moves on to the fast model.
+
+    ``client`` is kept for tests that inject a fake; in production each model gets its own client so each
+    one has its own deadline.
+    """
+    fallback = settings.gemini_fallback_model
+    primary_client = client if client is not None else create_client(settings, PRIMARY_TIMEOUT_MS)
+    started = monotonic()
     try:
-        return _generate_with(client, settings, settings.gemini_model, prompt, schema)
+        return _generate_with(primary_client, settings, settings.gemini_model, prompt, schema)
     except Exception as exc:
-        fallback = settings.gemini_fallback_model
-        if not fallback or fallback == settings.gemini_model or not _unavailable(exc):
+        if not fallback or fallback == settings.gemini_model or _credentials(exc):
             raise
-        logger.warning("Model %s unavailable; using %s", settings.gemini_model, fallback)
-        return _generate_with(client, settings, fallback, prompt, schema)
+        logger.warning("Model %s failed after %.1fs (%s); using %s", settings.gemini_model,
+                       monotonic() - started, str(exc)[:160], fallback)
+        fallback_client = client if client is not None else create_client(settings, FALLBACK_TIMEOUT_MS)
+        return _generate_with(fallback_client, settings, fallback, prompt, schema)
 
 
 def generate_workshop(
@@ -122,7 +139,7 @@ def generate_workshop(
 
     started = monotonic()
     try:
-        response = _generate(create_client(settings), settings, prompt)
+        response = _generate(None, settings, prompt)
         if not response.text:
             raise GeminiGenerationError("El modelo no devolvió contenido.")
         workshop = repair_workshop(WorkshopResponse.model_validate_json(response.text), material_text, limit)
@@ -147,7 +164,7 @@ def generate_rubric(settings: Settings, request: RubricRequest) -> RubricRespons
         raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
     started = monotonic()
     try:
-        response = _generate(create_client(settings), settings, build_rubric_prompt(request), RubricResponse)
+        response = _generate(None, settings, build_rubric_prompt(request), RubricResponse)
         if not response.text:
             raise GeminiGenerationError("El modelo no devolvió contenido.")
         rubric = repair_rubric(RubricResponse.model_validate_json(response.text), request.criteriaCount)

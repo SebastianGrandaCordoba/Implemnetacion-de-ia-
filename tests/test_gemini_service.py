@@ -105,3 +105,29 @@ class GeminiServiceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FallbackTests(GeminiServiceTests):
+    def models_answering(self, primary_error: Exception):
+        calls: list[str] = []
+
+        def generate_content(model, **kwargs):
+            calls.append(model)
+            if model == self.settings.gemini_model:
+                raise primary_error
+            return SimpleNamespace(text=payload())
+
+        return SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)), calls
+
+    def test_a_slow_or_busy_model_hands_over_to_the_fast_one(self) -> None:
+        for error in (RuntimeError("504 DEADLINE_EXCEEDED"), RuntimeError("503 UNAVAILABLE high demand"),
+                      RuntimeError("ReadTimeout"), RuntimeError("500 INTERNAL")):
+            client, calls = self.models_answering(error)
+            self.run_with(client)
+            self.assertEqual(calls, [self.settings.gemini_model, self.settings.gemini_fallback_model])
+
+    def test_a_bad_key_is_not_retried_with_another_model(self) -> None:
+        client, calls = self.models_answering(RuntimeError("403 PERMISSION_DENIED api key"))
+        with self.assertRaisesRegex(GeminiGenerationError, "credencial"):
+            self.run_with(client)
+        self.assertEqual(calls, [self.settings.gemini_model])
