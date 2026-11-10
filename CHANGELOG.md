@@ -1,6 +1,7 @@
 # Cambios
 
 ## 1.6.0
+- Talleres y quizzes también sin material: se escriben a partir del tema u objetivo del docente.
 - Tipos de trabajo para todas las áreas: resolución de problemas, laboratorio, análisis de fuentes, ensayo o
   debate, comprensión de lectura, producción escrita y expresión oral. El prompt no pide programar salvo que la
   materia o el docente lo pidan.

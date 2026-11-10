@@ -10,8 +10,8 @@ def many(count: int):
 
 
 class UploadTests(ApiCase):
-    def test_no_material(self) -> None:
-        self.assertRejected(self.post([]), 400, "entre 1 y 6")
+    def test_no_material_and_no_topic(self) -> None:
+        self.assertRejected(self.post([], learningObjective=""), 400, "indica el tema")
 
     def test_too_many_materials(self) -> None:
         self.assertRejected(self.post(many(7)), 400, "entre 1 y 6")

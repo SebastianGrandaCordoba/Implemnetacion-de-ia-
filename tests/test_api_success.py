@@ -42,8 +42,10 @@ class CustomRequestTests(ApiCase):
     def test_custom_requests_need_instructions(self) -> None:
         self.assertRejected(self.post(None, generationType="CUSTOM", teacherPrompt="hola"), 400, "Describe")
 
-    def test_workshops_still_need_material(self) -> None:
-        self.assertRejected(self.post(None, teacherPrompt=self.PROMPT), 400, "materiales")
+    def test_workshops_without_material_need_a_topic(self) -> None:
+        self.assertRejected(self.post(None, learningObjective=""), 400, "indica el tema")
+        quiz = self.post(None, generationType="QUIZ", learningObjective="Duda metódica de Descartes")
+        self.assertEqual(quiz.status_code, 200)
 
 
 if __name__ == "__main__":

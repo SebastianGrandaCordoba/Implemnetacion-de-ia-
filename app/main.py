@@ -248,7 +248,10 @@ async def create_workshop(
         raise HTTPException(status_code=400, detail="Envía los materiales en un solo campo.")
     uploads = files if files else ([file] if file is not None else [])
     try:
-        check_material_count(len(uploads), optional=kind == "CUSTOM")
+        # Without material the activity is written from the topic and the teacher's objective.
+        check_material_count(len(uploads), optional=True)
+        if not uploads and kind != "CUSTOM" and len(learning_objective.strip()) < 5:
+            raise InvalidRequest("Sin material, indica el tema o el objetivo de la actividad.")
     except InvalidRequest as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
