@@ -71,6 +71,17 @@ class CleanInterpretationTests(unittest.TestCase):
         clean = clean_interpretation(Interpretation(action="switch_course", course="C8"), request())
         self.assertEqual((clean.action, clean.section), ("open_section", "cursos"))
 
+    def test_how_to_needs_a_manual_entry(self) -> None:
+        missing = Interpretation(action="how_to", reply="No existe todavía.")
+        clean = clean_interpretation(missing, request("¿puedo pagar?"))
+        self.assertEqual(clean.action, "answer")
+        kept = clean_interpretation(Interpretation(action="how_to", topic="porcentajes"), request())
+        self.assertEqual((kept.action, kept.topic), ("how_to", "porcentajes"))
+
+    def test_the_manual_reaches_the_prompt(self) -> None:
+        prompt = build_interpret_prompt(request(manual="- [porcentajes] Porcentajes: toca Poner porcentajes."))
+        self.assertIn("[porcentajes] Porcentajes", prompt)
+
     def test_empty_answer_falls_back_to_the_rules(self) -> None:
         clean = clean_interpretation(Interpretation(action="answer"), request("¿cómo va?"))
         self.assertEqual((clean.action, clean.question), ("ask_course", "¿cómo va?"))

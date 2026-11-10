@@ -6,6 +6,8 @@
   de una actividad guardada, escribir a un estudiante, abrir una sección, responder una duda pedagógica…).
 - Estudiantes, actividades y cursos llegan como códigos (E3, A2, C1); el servicio descarta códigos inventados.
 - Responde primero el modelo rápido (12 s) y, si falla, el de calidad (15 s).
+- El intérprete recibe el manual de la plataforma y responde "¿cómo hago…?" con la acción `how_to` y el id
+  del tema, sin inventar funciones que no existen.
 - La rúbrica solo se reintenta si el segundo intento cabe en la espera del backend.
 
 ## 1.6.0
