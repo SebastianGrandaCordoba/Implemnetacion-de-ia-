@@ -1,5 +1,11 @@
 # Cambios
 
+## 1.8.0
+- `POST /speak`: la voz natural de Búho con Gemini TTS (`gemini-3.1-flash-tts-preview`, y si falla
+  `gemini-2.5-flash-preview-tts`), voz `Achird` en español latinoamericano neutro y cálido. Devuelve WAV.
+  Se configura con `GEMINI_TTS_MODEL` y `GEMINI_TTS_VOICE`; usa la misma `GEMINI_API_KEY`.
+- Las frases repetidas (el resumen del día, la prueba de voz) se sirven de memoria; máximo 30 por minuto.
+
 ## 1.7.0
 - `POST /assistant/interpret`: el intérprete de Búho. Lee un pedido libre del docente con la conversación previa
   y el contexto del curso, y devuelve una sola acción (crear taller, quiz o actividad a la medida, crear rúbrica

@@ -19,6 +19,8 @@ class Settings:
     generations_per_minute: int = 12
     gemini_thinking_level: str = "LOW"
     gemini_fallback_model: str = "gemini-3.5-flash-lite"
+    gemini_tts_model: str = "gemini-3.1-flash-tts-preview"
+    gemini_tts_voice: str = "Achird"
 
 
 def _int(name: str, default: int, low: int, high: int) -> int:
@@ -59,4 +61,6 @@ def get_settings() -> Settings:
         generations_per_minute=_int("GENERATIONS_PER_MINUTE", 12, 0, 120),
         gemini_thinking_level=_thinking_level(os.getenv("GEMINI_THINKING_LEVEL", "LOW")),
         gemini_fallback_model=os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip(),
+        gemini_tts_model=os.getenv("GEMINI_TTS_MODEL", "gemini-3.1-flash-tts-preview").strip(),
+        gemini_tts_voice=os.getenv("GEMINI_TTS_VOICE", "Achird").strip() or "Achird",
     )

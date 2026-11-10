@@ -1,10 +1,11 @@
 import hmac
 import logging
+from collections import OrderedDict
 from time import monotonic
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 from app.adapters.gemini_workshop_generator import GeminiWorkshopAdapter
@@ -38,11 +39,13 @@ from app.domain.request_rules import (
     safe_filename,
 )
 from app.domain.rubric import RubricRequest, RubricResponse
+from app.domain.speech import SpeechRequest, clean_speech_text
 from app.gemini_service import (
     GeminiConfigurationError,
     GeminiGenerationError,
     generate_rubric,
     interpret_request,
+    synthesize_speech,
 )
 from app.schemas import WorkshopResponse
 
@@ -52,7 +55,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FairTeam AI Service",
     description="Genera talleres educativos a partir de material de estudio proporcionado por el docente.",
-    version="1.7.0",
+    version="1.8.0",
 )
 
 app.add_middleware(RequestContextMiddleware)
@@ -296,6 +299,42 @@ def get_interpreter():
     """FastAPI dependency so tests can replace the model call."""
     settings = get_settings()
     return lambda request: interpret_request(settings, request)
+
+
+speech_limiter = SlidingWindowLimiter(30)
+_speech_cache: "OrderedDict[str, bytes]" = OrderedDict()
+SPEECH_CACHE_ENTRIES = 40
+
+
+def get_speaker():
+    """FastAPI dependency so tests can replace the model call."""
+    settings = get_settings()
+    return lambda text: synthesize_speech(settings, text)
+
+
+@app.post("/speak", dependencies=[Depends(require_backend_token)])
+async def speak_endpoint(request: SpeechRequest, speaker=Depends(get_speaker)) -> Response:
+    """Búho's natural voice: WAV audio of the text. The same text (the daily summary, a test) is served from memory."""
+    key = clean_speech_text(request.text)
+    cached = _speech_cache.get(key)
+    if cached is not None:
+        _speech_cache.move_to_end(key)
+        return Response(content=cached, media_type="audio/wav")
+    wait = speech_limiter.acquire("backend")
+    if wait is not None:
+        retry = {"Retry-After": str(max(1, round(wait)))}
+        raise HTTPException(status_code=429, detail="Búho habló mucho seguido.", headers=retry)
+    try:
+        audio = await run_in_threadpool(speaker, request.text)
+    except GeminiConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except GeminiGenerationError as exc:
+        logger.warning("Speech failed: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    _speech_cache[key] = audio
+    while len(_speech_cache) > SPEECH_CACHE_ENTRIES:
+        _speech_cache.popitem(last=False)
+    return Response(content=audio, media_type="audio/wav")
 
 
 @app.post("/assistant/interpret", response_model=Interpretation, dependencies=[Depends(require_backend_token)])

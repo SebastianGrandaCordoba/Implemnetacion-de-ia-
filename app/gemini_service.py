@@ -19,6 +19,7 @@ from app.domain.rubric import (
     repair_rubric,
     validate_rubric,
 )
+from app.domain.speech import TTS_FALLBACK_MODEL, build_speech_prompt, clean_speech_text, pcm_to_wav
 from app.domain.validation import InvalidWorkshop, validate_workshop
 from app.schemas import WorkshopResponse
 
@@ -44,6 +45,7 @@ FALLBACK_TIMEOUT_MS = 40_000
 # Búho waits for the interpreter while the teacher looks at "pensando…": the fast model goes first.
 INTERPRET_FAST_TIMEOUT_MS = 12_000
 INTERPRET_QUALITY_TIMEOUT_MS = 15_000
+SPEECH_TIMEOUT_MS = 30_000
 
 
 def create_client(settings: Settings, timeout_ms: int | None = None) -> genai.Client:
@@ -205,3 +207,37 @@ def interpret_request(settings: Settings, request: InterpretRequest, client=None
             last = exc
             logger.warning("Interpreter model %s failed after %.1fs: %s", model, monotonic() - started, str(exc)[:160])
     raise GeminiGenerationError(provider_message(str(last)) if last else "No se pudo interpretar el pedido.")
+
+
+def synthesize_speech(settings: Settings, text: str, client=None) -> bytes:
+    """Búho's voice as a WAV file; the older TTS model answers if the current one is busy or not available."""
+    if not settings.gemini_api_key:
+        raise GeminiConfigurationError("Falta configurar GEMINI_API_KEY en el servicio de IA.")
+    clean = clean_speech_text(text)
+    if not clean:
+        raise GeminiGenerationError("No hay texto para leer.")
+    config = types.GenerateContentConfig(
+        response_modalities=["AUDIO"],
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=settings.gemini_tts_voice)
+            )
+        ),
+    )
+    models = [m for m in dict.fromkeys([settings.gemini_tts_model, TTS_FALLBACK_MODEL]) if m]
+    started = monotonic()
+    last: Exception | None = None
+    for model in models:
+        try:
+            active = client if client is not None else create_client(settings, SPEECH_TIMEOUT_MS)
+            response = active.models.generate_content(model=model, contents=build_speech_prompt(clean), config=config)
+            pcm = response.candidates[0].content.parts[0].inline_data.data
+            if not pcm:
+                raise GeminiGenerationError("El modelo no devolvió audio.")
+            return pcm_to_wav(pcm)
+        except Exception as exc:  # noqa: BLE001 - any failure moves on to the next model
+            if _credentials(exc):
+                break
+            last = exc
+            logger.warning("Speech model %s failed after %.1fs: %s", model, monotonic() - started, str(exc)[:160])
+    raise GeminiGenerationError(provider_message(str(last)) if last else "No se pudo generar la voz.")
