@@ -1,5 +1,9 @@
 # Cambios
 
+## 1.8.1
+
+- Búho answers any message (greetings with typos, general knowledge, writing help) instead of asking to rephrase; reply limit raised to 220 words.
+
 ## 1.8.0
 - `POST /speak`: la voz natural de Búho con Gemini TTS (`gemini-3.1-flash-tts-preview`, y si falla
   `gemini-2.5-flash-preview-tts`), voz `Achird` en español latinoamericano neutro y cálido. Devuelve WAV.

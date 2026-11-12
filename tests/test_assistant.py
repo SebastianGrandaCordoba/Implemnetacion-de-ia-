@@ -144,3 +144,13 @@ class InterpretEndpointTests(unittest.TestCase):
 
     def test_requires_the_backend_token(self) -> None:
         self.assertEqual(self.client.post("/assistant/interpret", json={"message": "hola"}).status_code, 401)
+
+
+class OpenConversationTest(unittest.TestCase):
+    def test_prompt_lets_the_owl_answer_anything_and_infer_typos(self) -> None:
+        from app.domain.assistant import build_interpret_prompt
+
+        prompt = build_interpret_prompt(request("hoal brother"))
+        self.assertIn("cualquier cosa", prompt)
+        self.assertIn("errores de ortografía", prompt)
+        self.assertIn("cultura general", prompt)
