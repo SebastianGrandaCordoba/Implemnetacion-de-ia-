@@ -69,7 +69,7 @@ class CleanInterpretationTests(unittest.TestCase):
 
     def test_unknown_course_opens_the_course_list(self) -> None:
         clean = clean_interpretation(Interpretation(action="switch_course", course="C8"), request())
-        self.assertEqual((clean.action, clean.section), ("open_section", "cursos"))
+        self.assertEqual((clean.action, clean.section), ("open_section", "courses"))
 
     def test_how_to_needs_a_manual_entry(self) -> None:
         missing = Interpretation(action="how_to", reply="No existe todavía.")
