@@ -1,72 +1,72 @@
-# Cambios
+# Changelog
 
 ## 1.8.1
 
 - Búho answers any message (greetings with typos, general knowledge, writing help) instead of asking to rephrase; reply limit raised to 220 words.
 
 ## 1.8.0
-- `POST /speak`: la voz natural de Búho con Gemini TTS (`gemini-3.1-flash-tts-preview`, y si falla
-  `gemini-2.5-flash-preview-tts`), voz `Achird` en español latinoamericano neutro y cálido. Devuelve WAV.
-  Se configura con `GEMINI_TTS_MODEL` y `GEMINI_TTS_VOICE`; usa la misma `GEMINI_API_KEY`.
-- Las frases repetidas (el resumen del día, la prueba de voz) se sirven de memoria; máximo 30 por minuto.
+- `POST /speak`: Búho's natural voice with Gemini TTS (`gemini-3.1-flash-tts-preview`, falling back to
+  `gemini-2.5-flash-preview-tts`), voice `Achird` in neutral, warm Latin American Spanish. Returns WAV.
+  Configured with `GEMINI_TTS_MODEL` and `GEMINI_TTS_VOICE`; it uses the same `GEMINI_API_KEY`.
+- Repeated phrases (the day's summary, the voice test) are served from memory; at most 30 per minute.
 
 ## 1.7.0
-- `POST /assistant/interpret`: el intérprete de Búho. Lee un pedido libre del docente con la conversación previa
-  y el contexto del curso, y devuelve una sola acción (crear taller, quiz o actividad a la medida, crear rúbrica
-  de una actividad guardada, escribir a un estudiante, abrir una sección, responder una duda pedagógica…).
-- Estudiantes, actividades y cursos llegan como códigos (E3, A2, C1); el servicio descarta códigos inventados.
-- Responde primero el modelo rápido (12 s) y, si falla, el de calidad (15 s).
-- El intérprete recibe el manual de la plataforma y responde "¿cómo hago…?" con la acción `how_to` y el id
-  del tema, sin inventar funciones que no existen.
-- La rúbrica solo se reintenta si el segundo intento cabe en la espera del backend.
+- `POST /assistant/interpret`: Búho's interpreter. It reads a free-form request from the teacher together with the
+  previous conversation and the course context, and returns a single action (create a workshop, quiz or custom
+  activity, create a rubric for a saved activity, write to a student, open a section, answer a pedagogical question…).
+- Students, activities and courses arrive as codes (E3, A2, C1); the service discards invented codes.
+- The fast model answers first (12 s) and, if it fails, the quality model (15 s).
+- The interpreter receives the platform manual and answers "how do I…?" with the `how_to` action and the topic
+  id, without inventing features that do not exist.
+- The rubric is only retried if the second attempt fits within the backend's wait.
 
 ## 1.6.0
-- Talleres y quizzes también sin material: se escriben a partir del tema u objetivo del docente.
-- Tipos de trabajo para todas las áreas: resolución de problemas, laboratorio, análisis de fuentes, ensayo o
-  debate, comprensión de lectura, producción escrita y expresión oral. El prompt no pide programar salvo que la
-  materia o el docente lo pidan.
-- Libros completos: si el material supera el límite, se envían las páginas más relacionadas con el tema pedido
-  (en su orden original, con sus números de página) en lugar de rechazar el archivo. Se leen hasta 600 páginas.
-- Varios materiales reparten el presupuesto de texto en partes justas.
-- Gemini: el modelo de calidad tiene 32 s; si tarda, está saturado o falla, responde el modelo rápido (40 s).
-  Los reintentos internos del SDK están apagados para no pasar del tiempo del backend.
+- Workshops and quizzes also without material: they are written from the teacher's topic or objective.
+- Work types for all areas: problem solving, lab work, source analysis, essay or
+  debate, reading comprehension, written production and oral expression. The prompt does not ask for programming unless the
+  subject or the teacher asks for it.
+- Whole books: if the material exceeds the limit, the pages most related to the requested topic are sent
+  (in their original order, with their page numbers) instead of rejecting the file. Up to 600 pages are read.
+- Several materials split the text budget into fair parts.
+- Gemini: the quality model has 32 s; if it is slow, overloaded or fails, the fast model answers (40 s).
+  The SDK's internal retries are off so the backend's time limit is not exceeded.
 
 ## 1.5.0
-- `POST /generate-rubric`: rúbrica analítica (3 a 6 criterios, pesos que suman 100 y cuatro niveles:
-  Excelente, Bueno, Básico, Insuficiente) a partir de la descripción de una actividad o de un taller generado.
+- `POST /generate-rubric`: analytic rubric (3 to 6 criteria, weights adding up to 100 and four levels:
+  Excellent, Good, Basic, Insufficient) from the description of an activity or of a generated workshop.
 
 ## 1.4.0
-- Modo personalizado (`generationType=CUSTOM`): el docente describe el taller con sus palabras en `teacherPrompt`
-  (hasta 2000 caracteres) y el material pasa a ser opcional. Sin material, la referencia es "Indicaciones del docente".
-- En talleres y quizzes, `teacherPrompt` sirve como indicaciones adicionales del docente.
-- Talleres más completos: "Antes de empezar" para el estudiante, propósito, pistas graduadas y entregable por
-  actividad, notas solo para el docente y preguntas construidas a partir de errores frecuentes.
-- Cada tipo de solicitud tiene su forma: taller (3-4 actividades, 4-5 preguntas), quiz (5-8 preguntas) y
-  personalizado (lo que pida el docente, de 1 a 6 actividades).
-- Modelo por defecto `gemini-3.7-flash`, con `gemini-3.5-flash-lite` como respaldo si no está disponible.
+- Custom mode (`generationType=CUSTOM`): the teacher describes the workshop in their own words in `teacherPrompt`
+  (up to 2000 characters) and the material becomes optional. Without material, the reference is "Indicaciones del docente".
+- In workshops and quizzes, `teacherPrompt` serves as additional instructions from the teacher.
+- More complete workshops: "Before you start" for the student, purpose, graduated hints and deliverable per
+  activity, teacher-only notes and questions built from frequent mistakes.
+- Each request type has its own shape: workshop (3-4 activities, 4-5 questions), quiz (5-8 questions) and
+  custom (whatever the teacher asks for, 1 to 6 activities).
+- Default model `gemini-3.7-flash`, with `gemini-3.5-flash-lite` as a fallback if it is unavailable.
 
 ## 1.3.0
-- Tipos de trabajo al crear un taller: ejercicios guiados, programar código, construir una aplicación,
-  desplegar en internet, caso de estudio y proyecto en equipo (hasta tres a la vez).
-- Los trabajos de código, aplicación, despliegue y equipo se plantean como retos por etapas, con más tiempo
-  por actividad (hasta 120 minutos) y entregables verificables (repositorio, pruebas, URL pública).
+- Work types when creating a workshop: guided exercises, writing code, building an application,
+  deploying to the internet, case study and team project (up to three at once).
+- Code, application, deployment and team work is posed as staged challenges, with more time
+  per activity (up to 120 minutes) and verifiable deliverables (repository, tests, public URL).
 
 ## 1.2.0
-- Generación más rápida: nivel de razonamiento bajo y más margen de salida para no cortar el JSON.
-- Reparación automática de defectos menores antes de validar, para rechazar menos talleres.
-- Citas sin tildes ("Pagina 2") se aceptan.
-- Solo se reintentan errores rápidos (cuota y saturación) y nunca después de 25 s, para no superar el tiempo del backend.
-- Gemini saturado ya no se informa como modelo inexistente.
+- Faster generation: low reasoning level and more output headroom so the JSON is not cut off.
+- Automatic repair of minor defects before validating, to reject fewer workshops.
+- Citations without accents ("Pagina 2") are accepted.
+- Only fast errors (quota and overload) are retried, and never after 25 s, so the backend's time limit is not exceeded.
+- An overloaded Gemini is no longer reported as a nonexistent model.
 
 ## 1.1.0
-- Capa de dominio pura: prompt, reglas de calidad, errores, reglas de la solicitud y finalización.
-- Reglas nuevas para quizzes: respuestas dentro de las opciones, opciones distintas y preguntas sin repetir.
-- Decoradores de caché, reintento con espera exponencial y medición de tiempo alrededor de Gemini.
-- Límite de generaciones por minuto con respuesta 429 y `Retry-After`.
-- Rutas `GET /api/v1/limits` y `POST /api/v1/materials/inspect`.
-- Middleware con `X-Request-ID` y `Server-Timing`; errores inesperados sin detalles internos.
-- Configuración numérica con rangos y valores por defecto seguros.
-- Pruebas de API, lectores de documentos y adaptador Gemini; ruff y GitHub Actions.
+- Pure domain layer: prompt, quality rules, errors, request rules and finalization.
+- New quiz rules: answers within the options, distinct options and no repeated questions.
+- Cache, exponential-backoff retry and timing decorators around Gemini.
+- Per-minute generation limit with a 429 response and `Retry-After`.
+- Routes `GET /api/v1/limits` and `POST /api/v1/materials/inspect`.
+- Middleware with `X-Request-ID` and `Server-Timing`; unexpected errors without internal details.
+- Numeric configuration with ranges and safe defaults.
+- API, document reader and Gemini adapter tests; ruff and GitHub Actions.
 
 ## 1.0.0
-- Generación de talleres y quizzes desde PDF, DOCX y TXT con Gemini.
+- Workshop and quiz generation from PDF, DOCX and TXT with Gemini.

@@ -1,19 +1,19 @@
-# Reglas de calidad del taller
+# Workshop quality rules
 
-Cada taller generado pasa por `validate_workshop` antes de llegar al docente. Si una regla falla,
-el servicio responde 502 con el mensaje de la regla y el backend puede pedir otro intento.
+Every generated workshop goes through `validate_workshop` before reaching the teacher. If a rule fails,
+the service answers 502 with the rule's message and the backend can ask for another attempt.
 
-| Regla | Qué exige |
+| Rule | What it requires |
 | --- | --- |
-| `activity_count` | Entre 3 y 5 actividades |
-| `question_count` | Entre 3 y 5 preguntas de evaluación |
-| `objective_count` | Entre 2 y 4 objetivos de aprendizaje |
-| `activity_minutes` | Cada actividad dura entre 5 y 60 minutos |
-| `has_references` | Al menos una referencia al material |
-| `verifiable_references` | Las páginas, secciones o líneas citadas existen en el material |
-| `option_count` | Las preguntas cerradas tienen entre 2 y 5 opciones distintas |
-| `answers_in_options` | La respuesta correcta de una pregunta cerrada está entre sus opciones |
-| `distinct_questions` | No hay preguntas repetidas |
+| `activity_count` | Between 3 and 5 activities |
+| `question_count` | Between 3 and 5 assessment questions |
+| `objective_count` | Between 2 and 4 learning objectives |
+| `activity_minutes` | Each activity lasts between 5 and 60 minutes |
+| `has_references` | At least one reference to the material |
+| `verifiable_references` | The cited pages, sections or lines exist in the material |
+| `option_count` | Closed questions have between 2 and 5 distinct options |
+| `answers_in_options` | The correct answer of a closed question is among its options |
+| `distinct_questions` | No repeated questions |
 
-Para agregar una regla: escribe una función `(workshop, material_text) -> str | None`, pruébala en
-`tests/test_rule_<nombre>.py` y añádela a `RULES`.
+To add a rule: write a function `(workshop, material_text) -> str | None`, test it in
+`tests/test_rule_<name>.py` and add it to `RULES`.

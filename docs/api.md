@@ -1,10 +1,10 @@
-# API HTTP
+# HTTP API
 
-Todas las rutas `/api/v1` requieren la cabecera `X-AI-Service-Token`.
+All `/api/v1` routes require the `X-AI-Service-Token` header.
 
 ## GET /health
-Sin autenticación. Devuelve `status`, `version`, `uptimeSeconds`, `provider`, `model` y
-`generationConfigured`. Nunca incluye claves.
+No authentication. Returns `status`, `version`, `uptimeSeconds`, `provider`, `model` and
+`generationConfigured`. It never includes keys.
 
 ## GET /api/v1/limits
 ```json
@@ -14,7 +14,7 @@ Sin autenticación. Devuelve `status`, `version`, `uptimeSeconds`, `provider`, `
 ```
 
 ## POST /api/v1/materials/inspect
-`multipart/form-data` con uno a seis `files`. No llama a Gemini.
+`multipart/form-data` with one to six `files`. It does not call Gemini.
 ```json
 {"totalCharacters": 5120, "maxExtractedChars": 30000, "fitsLimit": true,
  "materials": [{"filename": "guia.pdf", "characters": 5120, "words": 830, "units": {"Página": 4},
@@ -22,15 +22,15 @@ Sin autenticación. Devuelve `status`, `version`, `uptimeSeconds`, `provider`, `
 ```
 
 ## POST /api/v1/workshops/generate
-Campos: `subject`, `targetLevel`, `learningObjective`, `learningContext`, `generationType`
-(`WORKSHOP` o `QUIZ`), `activityStyles` y `file` o hasta seis `files`. Responde el taller completo.
+Fields: `subject`, `targetLevel`, `learningObjective`, `learningContext`, `generationType`
+(`WORKSHOP` or `QUIZ`), `activityStyles` and `file` or up to six `files`. Returns the complete workshop.
 
-`activityStyles` es opcional: hasta tres de `GUIDED` (ejercicios guiados, por defecto), `CODE` (programar
-código), `APP` (construir una aplicación), `DEPLOY` (desplegar en internet), `CASE` (caso de estudio) y `TEAM`
-(proyecto en equipo), separados por comas. `CODE`, `APP`, `DEPLOY` y `TEAM` permiten actividades de hasta
-120 minutos con etapas en clase y fuera de ella; el resto se mantiene en una sesión de clase.
-Puede responder 429 con `Retry-After` si se superan las generaciones por minuto.
+`activityStyles` is optional: up to three of `GUIDED` (guided exercises, the default), `CODE` (write
+code), `APP` (build an application), `DEPLOY` (deploy to the internet), `CASE` (case study) and `TEAM`
+(team project), separated by commas. `CODE`, `APP`, `DEPLOY` and `TEAM` allow activities of up to
+120 minutes with stages in and out of class; the rest stay within one class session.
+It may answer 429 with `Retry-After` if the generations-per-minute limit is exceeded.
 
-## Errores
-Cuerpo `{"detail": "..."}` en español. Los errores no controlados responden 500 con
-`{"detail": "...", "requestId": "..."}` para buscar la traza en los registros.
+## Errors
+Body `{"detail": "..."}` in Spanish (the messages are shown to teachers). Unhandled errors answer 500 with
+`{"detail": "...", "requestId": "..."}` so the trace can be found in the logs.
