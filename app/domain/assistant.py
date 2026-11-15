@@ -22,7 +22,7 @@ ACTIONS = (
     "answer",
     "clarify",
 )
-SECTIONS = ("inicio", "estudiantes", "seguimiento", "talleres", "rubricas", "equipos", "cursos", "ajustes")
+SECTIONS = ("home", "students", "follow-up", "workshops", "rubrics", "teams", "courses", "settings")
 MAX_HISTORY = 8
 
 
@@ -221,9 +221,9 @@ def clean_interpretation(result: Interpretation, request: InterpretRequest) -> I
         data["reply"] = data["reply"] or "¿Para qué estudiante?"
     if action == "switch_course" and not data["course"]:
         action = "open_section"
-        data["section"] = "cursos"
+        data["section"] = "courses"
     if action == "open_section" and not data["section"]:
-        data["section"] = "inicio"
+        data["section"] = "home"
     if action == "ask_course" and not data["question"].strip():
         data["question"] = request.message
     if action == "create_activity" and not data["kind"]:
