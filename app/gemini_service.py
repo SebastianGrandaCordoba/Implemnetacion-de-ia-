@@ -206,7 +206,36 @@ def interpret_request(settings: Settings, request: InterpretRequest, client=None
                 break
             last = exc
             logger.warning("Interpreter model %s failed after %.1fs: %s", model, monotonic() - started, str(exc)[:160])
+    if last is not None and not _credentials(last):
+        text = _free_answer(settings, request, prompt, client)
+        if text:
+            return Interpretation(action="answer", reply=text)
     raise GeminiGenerationError(provider_message(str(last)) if last else "No se pudo interpretar el pedido.")
+
+
+FREE_ANSWER_ADDENDUM = (
+    "\n\nFORMATO ESPECIAL: ignora el formato JSON de arriba. Responde directamente al mensaje del docente con "
+    "texto en español, claro y completo (hasta 200 palabras), como lo haría un colega amable. No menciones acciones "
+    "ni códigos. Si pide algo que solo se puede hacer dentro del curso, explica cómo hacerlo en FairTeam."
+)
+
+
+def _free_answer(settings: Settings, request: InterpretRequest, prompt: str, client=None) -> str:
+    """Last resort: a plain-text answer from the fast model, with no JSON schema that could fail to parse."""
+    for model in [m for m in dict.fromkeys([settings.gemini_fallback_model, settings.gemini_model]) if m]:
+        try:
+            active = client if client is not None else create_client(settings, INTERPRET_QUALITY_TIMEOUT_MS)
+            response = active.models.generate_content(
+                model=model,
+                contents=prompt + FREE_ANSWER_ADDENDUM,
+                config=types.GenerateContentConfig(max_output_tokens=1200),
+            )
+            text = (response.text or "").strip()
+            if text:
+                return text[:1800]
+        except Exception as exc:  # noqa: BLE001 - this is already the last resort
+            logger.warning("Free answer with %s failed: %s", model, str(exc)[:160])
+    return ""
 
 
 def synthesize_speech(settings: Settings, text: str, client=None) -> bytes:

@@ -121,6 +121,18 @@ class InterpretModelTests(unittest.TestCase):
             interpret_request(self.settings, request(), client)
 
 
+    def test_a_broken_json_answer_falls_back_to_a_plain_text_answer(self) -> None:
+        def generate_content(model, **kwargs):
+            if getattr(kwargs["config"], "response_schema", None) is not None:
+                return SimpleNamespace(text="{not json")
+            return SimpleNamespace(text="Marte tiene dos lunas: Fobos y Deimos.")
+
+        client = SimpleNamespace(models=SimpleNamespace(generate_content=generate_content))
+        result = interpret_request(self.settings, request("¿cuántas lunas tiene Marte?"), client)
+        self.assertEqual(result.action, "answer")
+        self.assertIn("Fobos", result.reply)
+
+
 class InterpretEndpointTests(unittest.TestCase):
     def setUp(self) -> None:
         self.client = client_with(FakeUseCase())
