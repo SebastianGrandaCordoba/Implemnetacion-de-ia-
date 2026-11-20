@@ -35,6 +35,7 @@ class StudentCode(BaseModel):
     code: str = Field(max_length=8)
     level: str = Field(default="", max_length=40)
     weakest: str = Field(default="", max_length=120)
+    detail: str = Field(default="", max_length=500)
 
 
 class ActivityCode(BaseModel):
@@ -62,7 +63,7 @@ class InterpretRequest(BaseModel):
     scale: float = 5.0
     summary: str = Field(default="", max_length=600)
     topics: list[TopicAverage] = Field(default_factory=list, max_length=40)
-    students: list[StudentCode] = Field(default_factory=list, max_length=120)
+    students: list[StudentCode] = Field(default_factory=list, max_length=400)
     activities: list[ActivityCode] = Field(default_factory=list, max_length=30)
     courses: list[CourseCode] = Field(default_factory=list, max_length=30)
     manual: str = Field(default="", max_length=20000)
@@ -113,7 +114,8 @@ def _lines(items: list[str], empty: str) -> str:
 
 def _student_line(s: StudentCode) -> str:
     weakest = f", le cuesta {s.weakest}" if s.weakest else ""
-    return f"- {s.code}: {s.level or 'sin notas'}{weakest}"
+    detail = f" | {s.detail}" if s.detail else ""
+    return f"- {s.code}: {s.level or 'sin notas'}{weakest}{detail}"
 
 
 def _activity_line(a: ActivityCode) -> str:
@@ -144,6 +146,9 @@ Acciones:
 - ask_course: preguntas sobre el estado del curso o de un estudiante (quién necesita refuerzo, promedios, quién
   viene bajando, qué nota necesita para pasar, asistencia, comparar cortes, recomendaciones). Reescribe la
   pregunta en "question" completa y autónoma, resolviendo referencias como "ella", "ese tema" o "el mismo".
+  Úsala solo cuando la plataforma ya tiene esa tarjeta (refuerzo, bajando, promedios, qué necesita para pasar,
+  asistencia, cortes). Si la respuesta se saca de la lista de estudiantes de abajo (conteos, rankings,
+  comparaciones, "quién tiene más notas"), responde tú con answer en vez de delegar.
 - create_activity: crear un taller (kind=workshop), un quiz o evaluación (kind=quiz) o algo a la medida
   (kind=custom, cuando pide un formato especial: guía de lectura, debate, caso, proyecto). Llena topic, level
   (LOW refuerzo, MEDIUM seguimiento, HIGH reto) y student si es para uno; pon en "instructions" todo detalle que
@@ -168,6 +173,11 @@ Reglas:
 - Si el docente acepta una propuesta anterior ("sí", "dale", "hazlo"), ejecuta lo que Búho ofreció.
 - Si pide crear algo, créalo: no pidas confirmación ni propongas en lugar de hacerlo.
 - Si no nombra el tema de una actividad, usa el que tenga el promedio más bajo.
+- Tienes acceso a TODOS los datos del curso: la lista de estudiantes trae, por cada uno, promedio, cantidad de
+  notas, riesgo, tendencia, cortes, temas, asistencia y lo que necesita para pasar. Para cualquier pregunta de
+  datos (rankings, conteos, comparaciones, "quién tiene más notas", "cuántos van bien") calcula tú mismo con
+  esa lista y responde con action=answer, citando cifras y estudiantes con su código E#. Nunca digas que no
+  tienes el dato si está en la lista; si de verdad falta, dilo en una frase y ofrece lo más cercano.
 - Usa solo los códigos E#, A# y C# de la lista; nunca inventes nombres de estudiantes.
 - Eres capaz de responder sobre cualquier tema, no solo sobre la plataforma; sobre los datos de ESTE curso usa
   únicamente lo que aparece arriba y nunca inventes notas, estudiantes ni funciones.
@@ -182,7 +192,7 @@ CURSO ACTUAL: {request.course or "(sin nombre)"} (escala 0 a {request.scale:g})
 {request.summary}
 Temas:
 {topics}
-Estudiantes (códigos):
+Estudiantes (códigos, con su resumen de notas):
 {students}
 Actividades guardadas (más reciente primero):
 {activities}
